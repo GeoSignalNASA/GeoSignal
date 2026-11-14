@@ -6,15 +6,22 @@
   <title>GeoSignal — Informe NISAR sobre Calvos de Randín</title>
   <link rel="stylesheet" href="vendor/maplibre-gl.css" />
   <link rel="stylesheet" href="vendor/maplibre-gl-compare.css" />
+  <link rel="stylesheet" href="story/fonts.css" />
   <link rel="stylesheet" href="story/story.css" />
 </head>
 <body>
+  <a class="skip-link" href="#resumen">Saltar al contenido</a>
   <header class="topbar">
     <div class="topbar-brand">
       <strong>GeoSignal</strong>
       <span class="sub" id="brand-sub">Calvos de Randín · Informe NISAR</span>
     </div>
-    <nav class="toc-pills" aria-label="Capítulos del informe">
+    <nav class="toc" aria-label="Capítulos del informe">
+      <button class="toc-toggle" id="toc-toggle" type="button" aria-expanded="false" aria-controls="toc-pills">
+        <span id="toc-current">Resumen</span>
+        <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      </button>
+      <div class="toc-pills" id="toc-pills" hidden>
       <a class="toc-pill active" data-step="0" href="#resumen">Resumen</a>
       <a class="toc-pill" data-step="1" href="#cap-1">1. Incendio</a>
       <a class="toc-pill" data-step="2" href="#cap-2">2. Física SAR</a>
@@ -26,13 +33,14 @@
       <a class="toc-pill" data-step="8" href="#cap-8">8. Lluvia</a>
       <a class="toc-pill" data-step="9" href="#cap-9">9. Futuro</a>
       <a class="toc-pill" data-step="10" href="#cap-10">10. Límites</a>
+      </div>
     </nav>
     <div class="topbar-actions">
       <button class="btn-ghost" id="btn-lang" type="button">EN</button>
       <button class="btn-ghost" id="btn-print" type="button">Imprimir / PDF</button>
     </div>
   </header>
-  <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+  <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
 
   <!-- CAPÍTULO 0: RESUMEN EJECUTIVO -->
   <section class="hero" id="resumen">
@@ -145,7 +153,7 @@
         <div class="chart-box">
           <div class="chart-title"><span>HV medio (dB) · clic en un punto para ver la pasada</span><span>barras: SME2 humedad</span></div>
           <div id="chart-timeseries"></div>
-          <div id="ts-selected-readout" style="font-family:var(--mono);font-size:0.75rem;color:var(--cyan);margin-top:0.4rem"></div>
+          <div id="ts-selected-readout" aria-live="polite" style="font-family:var(--mono);font-size:0.75rem;color:var(--cyan);margin-top:0.4rem"></div>
         </div>
         <p style="font-size:0.86rem;color:var(--text-muted)">
           Los puntos amarillos marcan pasadas señaladas en auditoría de estabilidad radiométrica (productos <em>Provisional</em>); se conservan con aviso explícito.
@@ -187,7 +195,7 @@
 
         <table class="data-table">
           <thead>
-            <tr><th>Nivel ΔHV</th><th class="num">Hectáreas</th><th class="num">% perímetro</th></tr>
+            <tr><th scope="col">Nivel ΔHV</th><th scope="col" class="num">Hectáreas</th><th scope="col" class="num">% perímetro</th></tr>
           </thead>
           <tbody id="db-classes-tbody"></tbody>
         </table>
@@ -201,7 +209,7 @@
             <button class="pill-btn" type="button" data-dhb-mode="threshold">Umbral vivo en mapa</button>
             <button class="pill-btn" type="button" data-dhb-mode="continuous">Rampa continua</button>
           </div>
-          <div class="human-tip" id="dhb-calibration-note" style="margin:0 0 0.65rem;font-size:0.8rem">
+          <div class="human-tip plain" id="dhb-calibration-note">
             La pasada del <strong>1 de octubre</strong> registró un salto de humedad (SME2 0,18→0,23 m³/m³) que elevó el anillo de control en <strong>+1,22 dB</strong>. Descontando ese sesgo aparecen 221 ha; al secarse el suelo el <strong>25 de octubre</strong> emergen <strong>373,6 ha</strong> (≈ 370 ha arboladas oficiales).
           </div>
           <label for="db-slider">
@@ -214,7 +222,7 @@
             <button class="pill-btn" type="button" data-db-preset="-3.0">-3,0 dB (-50% señal)</button>
             <button class="pill-btn" type="button" data-db-preset="-6.0">-6,0 dB (-75% señal)</button>
           </div>
-          <div class="mini-metrics">
+          <div class="mini-metrics" aria-live="polite">
             <div class="mini-metric"><div class="k">Área quemada (100 m)</div><div class="v" id="db-ha-smooth">—</div></div>
             <div class="mini-metric"><div class="k">Área 20 m sin suavizar</div><div class="v" id="db-ha-raw">—</div></div>
             <div class="mini-metric"><div class="k">Falsos positivos (control)</div><div class="v" id="db-fp-rate">—</div></div>
@@ -248,14 +256,14 @@
 
         <table class="data-table">
           <thead>
-            <tr><th>Cobertura (WorldCover)</th><th class="num">Área EFFIS</th><th class="num">ΔHV 01-oct (neto)</th><th class="num">ΔHV 25-oct (seco)</th><th class="num">% ≤−1,5 dB (25-oct)</th></tr>
+            <tr><th scope="col">Cobertura (WorldCover)</th><th scope="col" class="num">Área EFFIS</th><th scope="col" class="num">ΔHV 01-oct (neto)</th><th scope="col" class="num">ΔHV 25-oct (seco)</th><th scope="col" class="num">% ≤−1,5 dB (25-oct)</th></tr>
           </thead>
           <tbody id="worldcover-tbody"></tbody>
         </table>
 
         <table class="data-table">
           <thead>
-            <tr><th>Polarización</th><th class="num">Perímetro</th><th class="num">Control</th><th class="num">Separación</th></tr>
+            <tr><th scope="col">Polarización</th><th scope="col" class="num">Perímetro</th><th scope="col" class="num">Control</th><th scope="col" class="num">Separación</th></tr>
           </thead>
           <tbody id="pol-compare-body"></tbody>
         </table>
@@ -279,7 +287,7 @@
             <button class="pill-btn" type="button" data-basin-field="risk_mean_3db">Severidad ≥ −3,0 dB</button>
             <button class="pill-btn" type="button" data-basin-field="risk_mean_6db">Calcinación ≥ −6,0 dB</button>
           </div>
-          <div class="basin-card" id="basin-inspector">Haz clic en una cuenca del mapa…</div>
+          <div class="basin-card" id="basin-inspector" aria-live="polite">Haz clic en una cuenca del mapa…</div>
         </div>
       </article>
 
@@ -297,7 +305,7 @@
             <strong id="rain-val-label" style="color:var(--cyan);font-family:var(--mono)">60 mm</strong>
           </label>
           <input id="rain-slider" type="range" min="0" max="150" step="5" value="60" />
-          <div class="mini-metrics">
+          <div class="mini-metrics" aria-live="polite">
             <div class="mini-metric"><div class="k">Escorrentía desde quemado (25-oct)</div><div class="v" id="rain-v-near">—</div></div>
             <div class="mini-metric"><div class="k">Caudal acumulado cuenca (Salas/Limia)</div><div class="v" id="rain-v-main">—</div></div>
           </div>
@@ -329,7 +337,7 @@
 
     <!-- COLUMNA DERECHA FIJA: MAPA MAPLIBRE + VISOR COMPARE -->
     <aside class="map-col">
-      <div class="map-frame">
+      <div class="map-frame" aria-label="Mapa interactivo del capítulo activo">
         <div id="story-map"></div>
         <div id="compare-wrap">
           <div id="compare-container" style="position:relative;width:100%;height:100%">
@@ -337,7 +345,7 @@
             <div id="after-map"></div>
           </div>
         </div>
-        <div class="map-hud">
+        <div class="map-hud" aria-live="polite">
           <div class="map-hud-title" id="hud-title">GeoSignal</div>
           <div class="map-hud-sub" id="hud-sub">Cargando capas…</div>
         </div>
@@ -363,7 +371,7 @@
 
     <table class="data-table">
       <thead>
-        <tr><th>Fecha pasada</th><th class="num">Cobertura perímetro</th><th class="num">HV control medio</th><th class="num">Desviación vs mediana</th><th>Estado QA</th></tr>
+        <tr><th scope="col">Fecha pasada</th><th scope="col" class="num">Cobertura perímetro</th><th scope="col" class="num">HV control medio</th><th scope="col" class="num">Desviación vs mediana</th><th scope="col">Estado QA</th></tr>
       </thead>
       <tbody id="qa-tbody"></tbody>
     </table>
@@ -376,12 +384,6 @@
       (4) la simulación de lluvia usa C = 0,6 asumido y se trunca en −8,0° W;
       (5) las pasadas NISAR son productos en fase <em>Provisional</em>.
     </div>
-
-    <pre>python data/download_timeseries.py
-python data/fetch_context_layers.py
-python data/extract_aoi_stack.py
-python data/build_story_data.py
-python data/validate_story_data.py</pre>
   </section>
 
   <script src="vendor/maplibre-gl.js"></script>

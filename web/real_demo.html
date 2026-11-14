@@ -67,6 +67,24 @@
   .aoi-box { fill: rgba(226,121,60,0.25); stroke: var(--accent); stroke-width: 1.2; }
   .aoi-dot { fill: #c2432e; stroke: #ede6da; stroke-width: 0.8; }
 
+  .map-legend-card {
+    position: absolute; bottom: 10px; right: 10px; max-width: 230px;
+    background: rgba(21,19,15,0.88); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.5rem 0.65rem; display: flex; flex-direction: column; gap: 0.3rem;
+    font-family: var(--label); font-size: 0.72rem; color: var(--text-muted);
+    backdrop-filter: blur(2px);
+  }
+  .legend-row { display: flex; align-items: center; gap: 0.5rem; }
+  .legend-swatch { flex: 0 0 auto; display: inline-block; }
+  .legend-swatch.grad-risk { width: 32px; height: 8px; border-radius: 3px; background: linear-gradient(to right, #3a6ea5, #e2a33c, #c2432e); }
+  .legend-swatch.line-fire { width: 22px; height: 0; border-top: 3px solid #39e8e0; }
+  .legend-swatch.line-basin { width: 22px; height: 0; border-top: 1px solid #4f7a8c; }
+  .legend-swatch.line-channel { width: 32px; height: 8px; border-radius: 3px; background: linear-gradient(to right, #3a6ea5, #39e8e0, #e2793c); }
+  .legend-swatch.line-edge { width: 22px; height: 0; border-top: 1.5px dashed #9c9284; }
+  .legend-swatch.tri { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 9px solid; }
+  .legend-swatch.tri-relevant { border-bottom-color: #e2a33c; }
+  .legend-swatch.tri-far { border-bottom-color: #9c9284; }
+
   .scale-bar { font-family: var(--mono); fill: var(--text-muted); font-size: 10px; }
   .scale-bar line { stroke: var(--text-muted); stroke-width: 1.5; }
   .scale-bar .tick { stroke-width: 1.5; }
@@ -94,10 +112,15 @@
   .rain-ticks { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.68rem; color: var(--text-muted); }
   .rain-map-wrap {
     border: 1px solid var(--border); border-radius: 10px; background: var(--surface); overflow: hidden;
+    position: relative;
   }
   #rain-map { width: 100%; height: auto; display: block; }
   .rain-channel { fill: none; stroke-linecap: round; stroke-linejoin: round; }
   .rain-edge-marker { stroke: #9c9284; stroke-width: 1; stroke-dasharray: 4 3; }
+  .barrier-marker { fill: #9c9284; stroke: #15130f; stroke-width: 1; cursor: pointer; opacity: 0.85; }
+  .barrier-marker.relevant { fill: #e2a33c; }
+  .barrier-marker:hover { opacity: 1; filter: brightness(1.2); }
+  .barrier-marker.selected { stroke: #ede6da; stroke-width: 2; }
   .rain-readout {
     display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; font-family: var(--label);
   }
@@ -161,6 +184,10 @@
       <div class="inset-title">Dónde cae esto en Galicia</div>
       <svg id="inset-map" viewBox="0 0 150 135"></svg>
     </div>
+    <div class="map-legend-card">
+      <div class="legend-row"><span class="legend-swatch grad-risk"></span> riesgo: bajo → alto</div>
+      <div class="legend-row"><span class="legend-swatch line-fire"></span> perímetro real del incendio</div>
+    </div>
   </div>
   <div class="panel" id="panel">
     <p class="placeholder">Haz clic en una cuenca del mapa<br>para ver sus métricas reales.</p>
@@ -202,6 +229,14 @@
 
   <div class="rain-map-wrap">
     <svg id="rain-map" viewBox="0 0 1000 900"></svg>
+    <div class="map-legend-card">
+      <div class="legend-row"><span class="legend-swatch line-basin"></span> contorno de cuencas (de fondo)</div>
+      <div class="legend-row"><span class="legend-swatch line-fire"></span> perímetro real del incendio</div>
+      <div class="legend-row"><span class="legend-swatch line-channel"></span> caudal simulado (cambia con la barra)</div>
+      <div class="legend-row"><span class="legend-swatch line-edge"></span> borde del DEM descargado</div>
+      <div class="legend-row"><span class="legend-swatch tri tri-relevant"></span> barrera: candidato relevante</div>
+      <div class="legend-row"><span class="legend-swatch tri tri-far"></span> barrera: candidato lejano</div>
+    </div>
   </div>
 
   <div class="rain-readout" id="rain-readout"></div>
@@ -210,6 +245,21 @@
     incendio) — súbelo o bájalo en tu cabeza si quieres ser más o menos conservador. El cauce se corta en la línea
     discontinua porque ahí termina la teja de DEM que descargamos (-8,0° de longitud), no porque el agua se pare ahí.
   </p>
+
+  <div class="section-head">
+    <h2>¿Dónde tendría sentido evaluar una barrera de contención?</h2>
+    <span class="scenario-badge">PISTA DE TERRENO — no es un diseño de ingeniería</span>
+  </div>
+  <p class="subhead">
+    Triángulos: puntos reales donde la pendiente del cauce cae de golpe (de empinado a más llano en ~300m) —
+    justo donde el agua pierde velocidad y el sedimento empezaría a depositarse por sí solo. Haz clic en uno.
+    Solo el que está pegado al incendio es relevante para este caso; los demás caen muy río abajo, ya en terreno
+    compartido con otras cuencas que no tienen que ver con este fuego — los dejamos visibles pero marcados como
+    "lejos", no escondidos.
+  </p>
+  <div class="panel" id="barrier-panel" style="min-height:auto;">
+    <p class="placeholder">Haz clic en un triángulo del mapa de arriba.</p>
+  </div>
 </div>
 
 <footer id="footer-note">cargando datos…</footer>
@@ -513,6 +563,45 @@ function renderRain(rainMm) {
     <div class="card"><div class="k">Caudal en el cauce principal</div><div class="v">${fmt(vMain)} m³</div></div>
   `;
 }
+
+// --- barrier/check-dam candidate sites: real slope-drop points along the ---
+// --- real traced channels. Terrain hint, not an engineering siting study. ---
+const BARRIER_CANDIDATES = [{"lon": -7.98611, "lat": 41.93111, "dist_from_fire_m": 18134.0, "slope_before_deg": 12.1, "slope_after_deg": 2.2, "slope_drop_deg": 9.9, "contrib_area_ha": 16541.6, "relevant": false}, {"lon": -7.82694, "lat": 41.93694, "dist_from_fire_m": 956.0, "slope_before_deg": 15.6, "slope_after_deg": 5.9, "slope_drop_deg": 9.8, "contrib_area_ha": 309.0, "relevant": true}, {"lon": -7.97944, "lat": 41.92944, "dist_from_fire_m": 25873.0, "slope_before_deg": 17.9, "slope_after_deg": 8.4, "slope_drop_deg": 9.5, "contrib_area_ha": 16391.2, "relevant": false}, {"lon": -7.96139, "lat": 41.92639, "dist_from_fire_m": 14658.0, "slope_before_deg": 15.3, "slope_after_deg": 5.8, "slope_drop_deg": 9.5, "contrib_area_ha": 16.2, "relevant": false}, {"lon": -7.95, "lat": 41.92528, "dist_from_fire_m": 15482.0, "slope_before_deg": 12.7, "slope_after_deg": 5.2, "slope_drop_deg": 7.5, "contrib_area_ha": 11.7, "relevant": false}];
+
+const barrierPanel = document.getElementById("barrier-panel");
+
+function selectBarrier(idx) {
+  document.querySelectorAll(".barrier-marker").forEach(m => m.classList.remove("selected"));
+  document.querySelectorAll(`.barrier-marker[data-idx="${idx}"]`).forEach(m => m.classList.add("selected"));
+
+  const b = BARRIER_CANDIDATES[idx];
+  const relevantNote = b.relevant
+    ? `<div class="fire-flag yes">A ${b.dist_from_fire_m.toLocaleString("es-ES")} m del incendio — relevante para este caso</div>`
+    : `<div class="fire-flag no">A ${(b.dist_from_fire_m/1000).toFixed(1)} km del incendio — terreno compartido con otras cuencas, poco específico de este fuego</div>`;
+
+  barrierPanel.innerHTML = `
+    <div class="basin-name">Candidato a barrera</div>
+    ${relevantNote}
+    <div class="metric-grid">
+      <div class="metric"><div class="k">Pendiente antes</div><div class="v">${b.slope_before_deg}°</div></div>
+      <div class="metric"><div class="k">Pendiente después</div><div class="v">${b.slope_after_deg}°</div></div>
+      <div class="metric"><div class="k">Caída de pendiente</div><div class="v">${b.slope_drop_deg}°</div></div>
+      <div class="metric"><div class="k">Área que aporta agua</div><div class="v">${b.contrib_area_ha.toLocaleString("es-ES")} ha</div></div>
+    </div>
+  `;
+}
+
+BARRIER_CANDIDATES.forEach((b, idx) => {
+  const [x, y] = projectRain([b.lon, b.lat]);
+  const marker = document.createElementNS(NS, "path");
+  const s = 7;
+  marker.setAttribute("d", `M${x},${y-s} L${x+s},${y+s} L${x-s},${y+s} Z`);
+  marker.setAttribute("class", "barrier-marker" + (b.relevant ? " relevant" : ""));
+  marker.dataset.idx = idx;
+  marker.addEventListener("click", () => selectBarrier(idx));
+  rainSvg.appendChild(marker);
+});
+selectBarrier(BARRIER_CANDIDATES.findIndex(b => b.relevant));
 
 const rainSlider = document.getElementById("rain-slider");
 const rainValueLabel = document.getElementById("rain-value");

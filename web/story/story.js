@@ -40,16 +40,16 @@ function darkBaseStyle() {
       },
     },
     layers: [
-      { id: "bg", type: "background", paint: { "background-color": "#12100c" } },
+      { id: "bg", type: "background", paint: { "background-color": "#ECE4D4" } },
       {
         id: "basemap",
         type: "raster",
         source: "osm",
         paint: {
-          "raster-opacity": 0.72,
-          "raster-saturation": -0.82,
-          "raster-brightness-max": 0.42,
-          "raster-contrast": 0.18,
+          "raster-opacity": 0.9,
+          "raster-saturation": -0.78,
+          "raster-brightness-min": 0.06,
+          "raster-contrast": -0.08,
         },
       },
     ],
@@ -123,11 +123,11 @@ async function renderLiveThresholdOverlay(thresholdDb) {
     const db = minDb + (q / 254.0) * span;
     if (db <= thresholdDb) {
       if (db <= -6.0) {
-        dst[i] = 178; dst[i + 1] = 24; dst[i + 2] = 43; dst[i + 3] = 245;
+        dst[i] = 90; dst[i + 1] = 20; dst[i + 2] = 16; dst[i + 3] = 245;
       } else if (db <= -3.0) {
-        dst[i] = 230; dst[i + 1] = 118; dst[i + 2] = 53; dst[i + 3] = 225;
+        dst[i] = 158; dst[i + 1] = 53; dst[i + 2] = 32; dst[i + 3] = 225;
       } else {
-        dst[i] = 246; dst[i + 1] = 201; dst[i + 2] = 99; dst[i + 3] = 205;
+        dst[i] = 204; dst[i + 1] = 107; dst[i + 2] = 44; dst[i + 3] = 205;
       }
     }
   }
@@ -183,7 +183,7 @@ function initCompareMaps() {
       beforeMap.addLayer({ id: "opt-lyr", type: "raster", source: "opt-src", paint: { "raster-opacity": 0.95 } });
     }
     beforeMap.addSource("perim-b", { type: "geojson", data: FIRE_GJ });
-    beforeMap.addLayer({ id: "perim-b-lyr", type: "line", source: "perim-b", paint: { "line-color": "#39e8e0", "line-width": 2 } });
+    beforeMap.addLayer({ id: "perim-b-lyr", type: "line", source: "perim-b", paint: { "line-color": "#8E4321", "line-width": 2 } });
   });
 
   afterMap.on("load", () => {
@@ -193,7 +193,7 @@ function initCompareMaps() {
       afterMap.addLayer({ id: "rad-lyr", type: "raster", source: "rad-src", paint: { "raster-opacity": 0.9 } });
     }
     afterMap.addSource("perim-a", { type: "geojson", data: FIRE_GJ });
-    afterMap.addLayer({ id: "perim-a-lyr", type: "line", source: "perim-a", paint: { "line-color": "#39e8e0", "line-width": 2 } });
+    afterMap.addLayer({ id: "perim-a-lyr", type: "line", source: "perim-a", paint: { "line-color": "#8E4321", "line-width": 2 } });
   });
 
   new maplibregl.Compare(beforeMap, afterMap, "#compare-container");
@@ -259,11 +259,11 @@ function updateRainMapLayer(rainMm) {
       "interpolate",
       ["linear"],
       ["*", ["get", "area_m2"], k],
-      0, "#3a6ea5",
-      refFlow * 0.02, "#39e8e0",
-      refFlow * 0.30, "#f6c963",
-      refFlow * 0.60, "#e2793c",
-      refFlow * 1.25, "#c2432e",
+      0, "#86B0A9",
+      refFlow * 0.15, "#5E979A",
+      refFlow * 0.40, "#478189",
+      refFlow * 0.75, "#255A6E",
+      refFlow * 1.25, "#13344A",
     ]);
   }
 
@@ -282,10 +282,11 @@ function updateBasinSensitivity(field) {
     "interpolate",
     ["linear"],
     ["coalesce", ["get", field], 0],
-    0, "#243b55",
-    maxR * 0.12, "#3a6ea5",
-    maxR * 0.45, "#e2a33c",
-    maxR, "#c2432e",
+    0, "#C8DCD6",
+    maxR * 0.12, "#86B0A9",
+    maxR * 0.35, "#478189",
+    maxR * 0.65, "#255A6E",
+    maxR, "#13344A",
   ]);
 }
 
@@ -339,6 +340,7 @@ function activateStep(stepId) {
   document.querySelectorAll(".toc-pill").forEach((p) => {
     p.classList.toggle("active", p.dataset.step === activeStep);
   });
+  updateTocLabel();
 
   showCompareMode(activeStep === "4");
 
@@ -360,8 +362,8 @@ function activateStep(stepId) {
       setLayerVisible("fire-fill", true);
       setAssetMarkersVisible(true);
       updateHud("Capítulo 1 · El incendio", "Perímetro EFFIS (1.234 ha) y núcleos cercanos (As Meaus, Randín, Embalse de Salas).", [
-        { color: "#39e8e0", label: "Perímetro EFFIS" },
-        { color: "#f6c963", label: "Núcleos / embalses OSM" },
+        { color: "#8E4321", label: "Perímetro EFFIS" },
+        { color: "#46603A", label: "Núcleos / embalses OSM" },
       ]);
       break;
     case "2":
@@ -376,31 +378,31 @@ function activateStep(stepId) {
       flyToCamera(getBlockCenter(), 11.5);
       updateRasterOverlay(`ts/${activeSeriesDate}`);
       updateHud(`Capítulo 3 · Serie Jul–Oct (${activeSeriesDate})`, "Haz clic en cualquier fecha del gráfico para inspeccionar esa pasada NISAR.", [
-        { color: "#e2793c", label: "Media HV perímetro" },
-        { color: "#9c9284", label: "Control no quemado" },
+        { color: "#8E4321", label: "Media HV perímetro" },
+        { color: "#57493A", label: "Control no quemado" },
       ]);
       break;
     case "4":
       updateHud("Capítulo 4 · Óptico ciego vs Radar nítido", "Desliza la cortina: Sentinel-2 real con humo/nubes frente a NISAR Banda L.", [
-        { color: "#39e8e0", label: "Perímetro EFFIS" },
-        { color: "#e67635", label: "Severidad NISAR" },
+        { color: "#8E4321", label: "Perímetro EFFIS" },
+        { color: "#CC6B2C", label: "Severidad NISAR" },
       ]);
       break;
     case "5":
       flyToCamera(getBlockCenter(), 11.6);
       applyDhbMode(activeDhbMode);
       updateHud("Capítulo 5 · Niveles de dB (ΔHV)", "Mueve el umbral de dB o alterna entre 01-oct bruto, calibrado y 25-oct seco.", [
-        { color: "#f6c963", label: "Moderada (-1,5 a -3 dB)" },
-        { color: "#e67635", label: "Alta (-3 a -6 dB)" },
-        { color: "#b2182b", label: "Extrema (≤ -6 dB)" },
+        { color: "#CC6B2C", label: "Moderada (-1,5 a -3 dB)" },
+        { color: "#9E3520", label: "Alta (-3 a -6 dB)" },
+        { color: "#5A1410", label: "Extrema (≤ -6 dB)" },
       ]);
       break;
     case "6":
       flyToCamera(getBlockCenter(), 11.6);
       updateRasterOverlay("dhh.png");
       updateHud("Capítulo 6 · Polarizaciones HH vs HV", "Mapa ΔHH (azul = caída, dorado = aumento por doble rebote en troncos/humedad).", [
-        { color: "#38bdf8", label: "Caída HH" },
-        { color: "#f5b932", label: "Aumento HH (doble rebote)" },
+        { color: "#86B0A9", label: "Caída HH" },
+        { color: "#CC6B2C", label: "Aumento HH (doble rebote)" },
       ]);
       break;
     case "7":
@@ -410,9 +412,9 @@ function activateStep(stepId) {
       setLayerVisible("basins-selected", true);
       setAssetMarkersVisible(true);
       updateHud("Capítulo 7 · Riesgo por microcuenca", "26 microcuencas reales (DEM Copernicus). Haz clic en una cuenca para ver métricas y activos.", [
-        { color: "#3a6ea5", label: "Riesgo bajo" },
-        { color: "#e2a33c", label: "Medio" },
-        { color: "#c2432e", label: "Alto (#8 y #9)" },
+        { color: "#86B0A9", label: "Riesgo bajo" },
+        { color: "#478189", label: "Medio" },
+        { color: "#13344A", label: "Alto (#8 y #9)" },
       ]);
       break;
     case "8":
@@ -423,8 +425,8 @@ function activateStep(stepId) {
       setAssetMarkersVisible(true);
       updateRainMapLayer(activeRainMm);
       updateHud("Capítulo 8 · Escenario de lluvia", "Trazas D8 reales desde el perímetro × lluvia hipotética (C = 0,6 asumido).", [
-        { color: "#39e8e0", label: "Escorrentía moderada" },
-        { color: "#e2793c", label: "Caudal acumulado alto" },
+        { color: "#478189", label: "Escorrentía moderada" },
+        { color: "#255A6E", label: "Caudal acumulado alto" },
       ]);
       break;
     case "9":
@@ -434,8 +436,8 @@ function activateStep(stepId) {
       setLayerVisible("rain-lines", true);
       setAssetMarkersVisible(true);
       updateHud("Capítulo 9 · Escalabilidad Ibérica", "Pipeline replicable a Quiroga/Ribeira Sacra y sinergia NISAR (12d) + Constelación Atlántica (3h).", [
-        { color: "#c2432e", label: "Cuencas críticas" },
-        { color: "#39e8e0", label: "Drenaje y perímetro" },
+        { color: "#13344A", label: "Cuencas críticas" },
+        { color: "#8E4321", label: "Drenaje y perímetro" },
       ]);
       break;
   }
@@ -453,6 +455,37 @@ function renderSeverityTable(sevObj) {
       </tr>`
     )
     .join("");
+}
+
+function updateTocLabel() {
+  const atHero = window.scrollY < (document.getElementById("resumen")?.offsetHeight || 0) * 0.6;
+  const pills = [...document.querySelectorAll(".toc-pill")];
+  const footer = document.getElementById("cap-10");
+  const atFooter = footer && footer.getBoundingClientRect().top < window.innerHeight * 0.5;
+  const current = atHero ? pills[0] : atFooter ? pills.find((p) => p.dataset.step === "10") : pills.find((p) => p.dataset.step === activeStep);
+  pills.forEach((p) => (p === current ? p.setAttribute("aria-current", "true") : p.removeAttribute("aria-current")));
+  const lbl = document.getElementById("toc-current");
+  if (lbl && current) lbl.textContent = current.textContent;
+}
+
+function syncPressed() {
+  document.querySelectorAll(".pill-btn").forEach((b) => b.setAttribute("aria-pressed", b.classList.contains("active")));
+}
+
+function initToc() {
+  const btn = document.getElementById("toc-toggle");
+  const list = document.getElementById("toc-pills");
+  if (!btn || !list) return;
+  const setOpen = (open) => {
+    list.hidden = !open;
+    btn.setAttribute("aria-expanded", String(open));
+  };
+  btn.addEventListener("click", () => setOpen(list.hidden));
+  list.addEventListener("click", (e) => { if (e.target.closest("a")) setOpen(false); });
+  document.addEventListener("click", (e) => { if (!list.hidden && !e.target.closest(".toc")) setOpen(false); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !list.hidden) { setOpen(false); btn.focus(); }
+  });
 }
 
 function applyDhbMode(mode) {
@@ -585,6 +618,7 @@ function applyLanguage(lang) {
     if (dict.tocLabels[idx]) el.textContent = dict.tocLabels[idx];
   });
   renderPhysicsDiagrams(document.getElementById("physics-diagrams"), lang);
+  updateTocLabel();
 }
 
 async function init() {
@@ -604,6 +638,10 @@ async function init() {
   FIRE_GJ = fire;
   RAIN_SEGS_GJ = buildRainSegmentsGeoJson(rain);
 
+  initToc();
+  syncPressed();
+  // Tras cualquier clic en un botón de opción, reflejar su estado para lectores de pantalla
+  document.addEventListener("click", (e) => { if (e.target.closest(".pill-btn")) syncPressed(); });
   populateExecutiveSummary();
   renderPhysicsDiagrams(document.getElementById("physics-diagrams"), activeLang);
   renderHistogramChart(document.getElementById("chart-histogram"), STATS.histogram);
@@ -637,30 +675,30 @@ async function init() {
     map.addLayer({ id: "radar-overlay-layer", type: "raster", source: "radar-overlay", layout: { visibility: "none" }, paint: { "raster-opacity": 0.9 } });
 
     map.addSource("basins", { type: "geojson", data: BASINS_GJ });
-    map.addLayer({ id: "basins-fill", type: "fill", source: "basins", layout: { visibility: "none" }, paint: { "fill-color": "#3a6ea5", "fill-opacity": 0.62 } });
-    map.addLayer({ id: "basins-outline", type: "line", source: "basins", layout: { visibility: "none" }, paint: { "line-color": "#ede6da", "line-width": 0.8, "line-opacity": 0.4 } });
-    map.addLayer({ id: "basins-selected", type: "line", source: "basins", filter: ["==", ["get", "basin_id"], -1], layout: { visibility: "none" }, paint: { "line-color": "#ffffff", "line-width": 2.4 } });
+    map.addLayer({ id: "basins-fill", type: "fill", source: "basins", layout: { visibility: "none" }, paint: { "fill-color": "#478189", "fill-opacity": 0.62 } });
+    map.addLayer({ id: "basins-outline", type: "line", source: "basins", layout: { visibility: "none" }, paint: { "line-color": "#241C14", "line-width": 0.8, "line-opacity": 0.35 } });
+    map.addLayer({ id: "basins-selected", type: "line", source: "basins", filter: ["==", ["get", "basin_id"], -1], layout: { visibility: "none" }, paint: { "line-color": "#241C14", "line-width": 2.6 } });
     updateBasinSensitivity("risk_mean");
 
     map.addSource("rain-segs", { type: "geojson", data: RAIN_SEGS_GJ });
-    map.addLayer({ id: "rain-lines", type: "line", source: "rain-segs", layout: { visibility: "none", "line-cap": "round" }, paint: { "line-color": "#39e8e0", "line-width": 2, "line-opacity": 0.88 } });
+    map.addLayer({ id: "rain-lines", type: "line", source: "rain-segs", layout: { visibility: "none", "line-cap": "round" }, paint: { "line-color": "#86B0A9", "line-width": 2, "line-opacity": 0.88 } });
 
     map.addSource("dem-edge", {
       type: "geojson",
       data: { type: "Feature", geometry: { type: "LineString", coordinates: [[DEM_TILE_EDGE_LON, 41.80], [DEM_TILE_EDGE_LON, 42.02]] } },
     });
-    map.addLayer({ id: "dem-edge-line", type: "line", source: "dem-edge", layout: { visibility: "none" }, paint: { "line-color": "#9c9284", "line-width": 1.2, "line-dasharray": [4, 4] } });
+    map.addLayer({ id: "dem-edge-line", type: "line", source: "dem-edge", layout: { visibility: "none" }, paint: { "line-color": "#57493A", "line-width": 1.4, "line-dasharray": [4, 4] } });
 
     map.addSource("fire-perim", { type: "geojson", data: FIRE_GJ });
-    map.addLayer({ id: "fire-fill", type: "fill", source: "fire-perim", layout: { visibility: "none" }, paint: { "fill-color": "#e2793c", "fill-opacity": 0.16 } });
-    map.addLayer({ id: "fire-line", type: "line", source: "fire-perim", paint: { "line-color": "#39e8e0", "line-width": 2.2 } });
+    map.addLayer({ id: "fire-fill", type: "fill", source: "fire-perim", layout: { visibility: "none" }, paint: { "fill-color": "#8E4321", "fill-opacity": 0.22 } });
+    map.addLayer({ id: "fire-line", type: "line", source: "fire-perim", paint: { "line-color": "#8E4321", "line-width": 2.2 } });
 
     // Marcadores HTML en píldoras compactas para núcleos/embalses OSM
     assetMarkers = ASSETS_GJ.features.map((f) => {
       const el = document.createElement("div");
       el.style.cssText =
-        "display:inline-flex;align-items:center;gap:4px;padding:1px 6px;border-radius:999px;background:rgba(21,19,15,0.86);border:1px solid rgba(255,255,255,0.14);font:600 10px ui-monospace,monospace;color:#f3ede2;white-space:nowrap;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,0.65);";
-      const dotCol = f.properties.type === "reservoir" ? "#39e8e0" : "#f6c963";
+        "display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:4px;background:rgba(245,240,230,0.94);font:600 12px Inter,ui-sans-serif,sans-serif;color:#241C14;white-space:nowrap;pointer-events:none;box-shadow:0 1px 6px rgba(36,28,20,0.25);";
+      const dotCol = f.properties.type === "reservoir" ? "#23596A" : "#8E4321";
       el.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:${dotCol};flex-shrink:0"></span><span>${f.properties.name}</span>`;
       return new maplibregl.Marker({ element: el, anchor: "bottom", offset: [0, -4] }).setLngLat(f.geometry.coordinates).addTo(map);
     });
@@ -672,7 +710,13 @@ async function init() {
     map.on("mouseleave", "basins-fill", () => { map.getCanvas().style.cursor = ""; });
 
     selectBasinById(STATS.basins_summary[0].basin_id);
-    activateStep("1");
+    // Si el mapa termina de cargar con el lector ya a mitad del informe, activar el capítulo visible
+    const mid = window.innerHeight / 2;
+    const visible = [...document.querySelectorAll(".step-card[data-step]")].find((c) => {
+      const r = c.getBoundingClientRect();
+      return r.top <= mid && r.bottom >= mid;
+    });
+    activateStep(visible ? visible.dataset.step : "1");
   });
 
   // Controles interactivos
@@ -739,7 +783,7 @@ async function init() {
         }
       }
     },
-    { threshold: 0.45, rootMargin: "-15% 0px -35% 0px" }
+    { threshold: 0, rootMargin: "-45% 0px -50% 0px" }
   );
   document.querySelectorAll(".step-card[data-step]").forEach((el) => observer.observe(el));
 
@@ -747,6 +791,7 @@ async function init() {
     const doc = document.documentElement;
     const pct = (doc.scrollTop / Math.max(doc.scrollHeight - doc.clientHeight, 1)) * 100;
     document.getElementById("progress-fill").style.width = `${Math.min(100, Math.max(0, pct))}%`;
+    updateTocLabel();
   }, { passive: true });
 }
 

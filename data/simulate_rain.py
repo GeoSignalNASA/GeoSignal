@@ -19,7 +19,7 @@ import rasterio
 from shapely.geometry import LineString
 
 N_SEEDS = 8
-MAX_STEPS = 4000
+MAX_STEPS = 40000
 
 DIRS = {1: (0, 1), 2: (1, 1), 4: (1, 0), 8: (1, -1), 16: (0, -1), 32: (-1, -1), 64: (-1, 0), 128: (-1, 1)}
 
