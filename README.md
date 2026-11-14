@@ -10,9 +10,11 @@ Galicia): ignición 2026-09-24, controlado 2026-09-27, ~518 ha.
 data/
   config.py            AOI, fechas pre/post-fuego, umbral de quemado
   search_download.py   busca y descarga GCOV + SME2 + Sentinel-1 en ASF
-  compute_change.py    diff de HV (dB) pre/post -> burn_severity.tif
+  compute_change.py    diff de HV (dB) pre/post, suavizado -> burn_severity.tif
   convert_sme2.py       SME2 (EASE-Grid, 200m) -> GeoTIFF alineado a burn_severity.tif
-  risk_index.py         severidad x pendiente x humedad -> riesgo por cuenca
+  compute_slope.py      Copernicus DEM GLO-30 -> slope.tif alineado a burn_severity.tif
+  delineate_basins.py   DEM -> microcuencas reales (WhiteboxTools) -> basins.geojson
+  risk_index.py         quema x (pendiente + sequedad) -> riesgo por cuenca
 web/
   index.html / app.js / style.css   slider óptico-vs-radar + mapa de riesgo
   demo.html             maqueta sin datos reales, para probar la interacción
@@ -46,19 +48,37 @@ extinción sobre el terreno; contadlo así en el pitch, no escondáis el número
   perímetro real — el borde de la rejilla geocodificada corta justo por
   la zona del incendio. Descartado, no lo uséis.
 - Track 15/frame 23 (ascendente) cubre el **99,9%** del perímetro real.
-  Con el umbral de -1,5 dB en HV: **239 ha** de píxeles "quemados", frente
-  a 518 ha oficiales y 1.234 ha de EFFIS. Nuestro número es más bajo que
-  los dos, probablemente porque la caída de HV es sobre todo una señal de
-  pérdida de estructura de copa — el desglose oficial es 370 ha de monte
-  arbolado + 148 ha de pasto, y el pasto quemado no da la misma firma en
-  L-band. Presentadlo como "núcleo de quema severa en zona arbolada", no
-  como el área total quemada.
+  Con el umbral de -1,5 dB en HV sin suavizar: 239 ha. Con el suavizado
+  de 100m que añadimos después (ver más abajo): **89 ha** — baja porque
+  buena parte de esos 239 ha eran speckle, no señal real (lo confirma que
+  cuencas sin incendio marcaban ~12-14% "quemado" antes de suavizar). 89 ha
+  frente a 518 oficiales y 1.234 de EFFIS: preséntalo como "núcleo de quema
+  severa en zona arbolada" (official: 370 ha arbolado + 148 ha pasto — el
+  pasto no da la misma firma en L-band), no como el área total quemada.
 
 **Ya descargado y procesado**: el par track 15/frame 23 (GCOV + SME2,
-~4,1 GB) y el perímetro de EFFIS en `data/raw/`. `data/out/burn_severity.tif`
-generado. `data/raw/soil_moisture.tif` generado del SME2 del 1-oct,
-reproyectado y alineado a la rejilla de la severidad (`convert_sme2.py`).
-Falta: pendiente, cuencas y activos — ninguno sale de una API con una query.
+~4,1 GB), el perímetro de EFFIS, el DEM de Copernicus (GLO-30, bucket
+público de AWS, sin login) y las 26 microcuencas reales delineadas desde
+ese DEM — todo en `data/raw/`. `data/out/burn_severity.tif`,
+`data/raw/soil_moisture.tif`, `data/raw/slope.tif` y `data/out/risk_index.tif`
+generados y verificados. Falta solo `data/raw/assets.geojson` (núcleos/
+embalses de OSM) para que `risk_index.py` escriba el geojson final para
+la web.
+
+**Riesgo por cuenca, validado (2026-11-14):** las cuencas 8 y 9 — las que
+contienen el incendio real — salen en el puesto **#1 y #2 de 26** por
+riesgo medio, con >20x de margen sobre la tercera. No fue automático;
+hicieron falta dos correcciones:
+- **Suavizado antes de umbralizar.** El diff de HV crudo a 20m tiene
+  speckle suficiente para que el umbral de -1,5 dB marque ~12-14% de
+  "quemado" en cuencas que el fuego nunca tocó. `compute_change.py`
+  ahora aplica un boxcar de 100m (NaN-aware) antes de umbralizar —
+  práctica estándar en SAR que me había saltado.
+- **Multiplicar, no sumar.** La fracción de área quemada por cuenca es
+  pequeña (máx ~1,6%) comparada con pendiente/sequedad normalizadas
+  (0–1), así que en una suma ponderada quedaba aplastada. `risk_index.py`
+  ahora usa `riesgo = quemado × (pendiente + sequedad)`: sin quema no hay
+  riesgo elevado, sin importar lo empinado o seco que esté el terreno.
 
 ## Pipeline de datos (equipo de datos)
 
@@ -92,15 +112,24 @@ nivel de más abajo, en `data/data/raw/`.
    — ya hecho con el SME2 del 1-oct: `data/raw/soil_moisture.tif`, reproyectado
    de EASE-Grid2 (EPSG:6933, 200m) a la rejilla de `burn_severity.tif`.
    Dentro del perímetro real: 0,175–0,293 m³/m³, media 0,225.
-6. Consigue por tu cuenta (no están en este repo):
-   - `data/raw/slope.tif` — pendiente desde el MDT del IGN o Copernicus DEM
-   - `data/raw/basins.geojson` — microcuencas (WhiteboxTools o pysheds
-     sobre el mismo DEM) — la zona cae en la cabecera del Limia/Salas
+6. `data/.venv/bin/python3 data/compute_slope.py data/raw/<dem.tif> data/out/burn_severity.tif data/raw/slope.tif`
+   — ya hecho con el tile Copernicus GLO-30 que cubre el AOI
+   (`https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N41_00_W008_00_DEM/...tif`,
+   público, sin login). Pendiente media dentro del perímetro real: 11,1°.
+7. `data/.venv/bin/python3 data/delineate_basins.py data/raw/<dem_sin_predictor>.tif data/raw/hydro data/raw/basins.geojson`
+   — ya hecho: 26 microcuencas reales (WhiteboxTools: fill → D8 → acumulación
+   → red de drenaje → subbasins → vectorizar), umbral de 10.000 celdas
+   ajustado para que el incendio caiga en 2 cuencas, no en 23. **Nota:** el
+   GeoTIFF de Copernicus usa un predictor de compresión que WhiteboxTools no
+   lee — hay que reescribirlo con rasterio (`compress='lzw', predictor=1`)
+   antes de pasárselo, y `set_working_dir()` necesita ruta absoluta o falla
+   en silencio.
+8. Consigue por tu cuenta (no está en este repo, no sale de ninguna API):
    - `data/raw/assets.geojson` — núcleos/embalses aguas abajo (OSM):
      Randín, Calvos de Randín, As Meaus (Baltar), Baltar
-6. `data/.venv/bin/python3 data/risk_index.py` — escribe `web/data/basins_risk.geojson`.
-7. Exporta la severidad a PNG para el slider:
-   `gdal_translate -of PNG -scale data/out/burn_severity.tif web/data/severity.png`
+9. `data/.venv/bin/python3 data/risk_index.py` — escribe `web/data/basins_risk.geojson`.
+10. Exporta la severidad a PNG para el slider:
+    `gdal_translate -of PNG -scale data/out/burn_severity.tif web/data/severity.png`
 
 ## Web (equipo de frontend)
 

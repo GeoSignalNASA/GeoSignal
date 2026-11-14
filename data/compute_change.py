@@ -14,12 +14,14 @@ import sys
 import h5py
 import numpy as np
 import rasterio
+import scipy.ndimage as ndi
 from rasterio.transform import from_origin
 
 from config import HV_BURN_THRESHOLD_DB, OUT_DIR
 
 GRID_PATH = "/science/LSAR/GCOV/grids/frequencyA"
 HV_DATASET = "HVHV"
+SMOOTH_WINDOW = 5  # pixels (5*20m = 100m boxcar), see note in compute_severity
 
 
 def load_hv(h5_path):
@@ -40,6 +42,17 @@ def to_db(power):
     return 10 * np.log10(power)
 
 
+def nan_aware_boxcar(arr, size):
+    """Local mean over a size x size window, ignoring NaNs instead of
+    propagating them into every neighboring pixel (what a plain
+    uniform_filter would do)."""
+    valid = np.isfinite(arr).astype("float64")
+    filled = np.where(np.isfinite(arr), arr, 0.0)
+    sum_valid = ndi.uniform_filter(filled, size=size, mode="constant", cval=0.0)
+    frac_valid = ndi.uniform_filter(valid, size=size, mode="constant", cval=0.0)
+    return np.where(frac_valid > 0, sum_valid / frac_valid, np.nan)
+
+
 def compute_severity(pre_path, post_path, out_path):
     pre_hv, transform, epsg = load_hv(pre_path)
     post_hv, post_transform, post_epsg = load_hv(post_path)
@@ -51,7 +64,13 @@ def compute_severity(pre_path, post_path, out_path):
             "before diffing."
         )
 
-    diff_db = to_db(post_hv) - to_db(pre_hv)
+    diff_db_raw = to_db(post_hv) - to_db(pre_hv)
+    # GCOV at 20m still carries a lot of speckle -- a raw per-pixel diff
+    # threshold flags ~12-15% of pixels as "burned" even in basins the
+    # fire never touched. Boxcar-smooth before thresholding, standard
+    # practice for SAR change detection (this is what "multi-looking"
+    # buys you, just done post-hoc instead of during SLC processing).
+    diff_db = nan_aware_boxcar(diff_db_raw, SMOOTH_WINDOW)
     burned = diff_db <= HV_BURN_THRESHOLD_DB
 
     profile = {
