@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>GeoSignal — Madrid-Ávila</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@mapbox/mapbox-gl-compare@0.4.3/dist/mapbox-gl-compare.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Incendio Madrid–Ávila — óptico vs. radar, severidad y riesgo por cuenca</h1>
+  </header>
+
+  <section id="compare-section">
+    <h2>Óptico (con humo/nubes) vs. radar NISAR (ve a través)</h2>
+    <div id="compare-container">
+      <div id="before-map" class="map"></div>
+      <div id="after-map" class="map"></div>
+    </div>
+  </section>
+
+  <section id="risk-section">
+    <h2>Riesgo por microcuenca</h2>
+    <div id="risk-map-wrap">
+      <div id="risk-map" class="map"></div>
+      <aside id="basin-panel">
+        <p class="placeholder">Haz clic en una cuenca para ver su riesgo y qué hay aguas abajo.</p>
+      </aside>
+    </div>
+    <div id="legend">
+      <span>Riesgo bajo</span>
+      <div id="legend-gradient"></div>
+      <span>Riesgo alto</span>
+    </div>
+  </section>
+
+  <script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
+  <script>window.mapboxgl = maplibregl;</script>
+  <script src="https://unpkg.com/@mapbox/mapbox-gl-compare@0.4.3/dist/mapbox-gl-compare.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

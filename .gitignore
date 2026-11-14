@@ -1,1 +1,11 @@
 .DS_Store
+data/raw/*
+!data/raw/*.geojson
+data/out/
+web/data/*.png
+web/data/*.geojson
+.env
+__pycache__/
+*.pyc
+data/.venv/
+.netrc

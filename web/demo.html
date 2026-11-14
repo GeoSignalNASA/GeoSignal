@@ -1,0 +1,622 @@
+<!--
+  Standalone illustrative demo of the Madrid-Ávila UI concept.
+  Self-contained (no CDN/tiles — Artifact CSP blocks external hosts), so
+  terrain/basins here are synthetic canvas art, not real NISAR/Sentinel
+  imagery. The real wiring lives in web/app.js + web/index.html.
+  Single dark "ops console" theme by design, matching web/style.css.
+-->
+<title>GeoSignal — demo Calvos de Randín</title>
+<style>
+  :root {
+    --bg: #15130f;
+    --surface: #1f1b16;
+    --surface-2: #262019;
+    --border: #3a332b;
+    --text: #ede6da;
+    --text-muted: #9c9284;
+    --accent: #e2793c;
+    --accent-dim: #8a5330;
+    --cool: #4f7a8c;
+    --risk-low: #3a6ea5;
+    --risk-mid: #e2a33c;
+    --risk-high: #c2432e;
+    --mono: "SF Mono", "Cascadia Code", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    --sans: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    --label: ui-sans-serif, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    padding: clamp(1rem, 3vw, 2.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+  }
+
+  a { color: var(--accent); }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.1rem;
+  }
+
+  h1 {
+    font-size: clamp(1.4rem, 2.6vw, 1.9rem);
+    font-weight: 500;
+    margin: 0.15rem 0 0;
+    text-wrap: balance;
+  }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.2rem 0.5rem;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  section { display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  h2 {
+    font-family: var(--label);
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    margin: 0;
+    color: var(--text);
+  }
+
+  .hint {
+    font-family: var(--label);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  /* --- comparison slider --- */
+
+  .compare {
+    position: relative;
+    height: clamp(260px, 42vw, 420px);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .compare canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .compare .after-layer {
+    clip-path: inset(0 0 0 var(--reveal, 50%));
+  }
+
+  .pane-label {
+    position: absolute;
+    top: 0.65rem;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.55rem;
+    border-radius: 3px;
+    background: rgba(21, 19, 15, 0.72);
+    z-index: 3;
+  }
+
+  .pane-label.before { left: 0.65rem; color: var(--cool); }
+  .pane-label.after { right: 0.65rem; color: var(--accent); }
+
+  .compare input[type="range"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: ew-resize;
+    z-index: 4;
+  }
+
+  .slider-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--reveal, 50%);
+    width: 2px;
+    background: var(--text);
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .slider-handle::after {
+    content: "⇆";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--text);
+    color: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+  }
+
+  /* --- risk map --- */
+
+  .risk-wrap {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 1rem;
+    height: clamp(300px, 46vw, 460px);
+  }
+
+  .risk-map {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .risk-map canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  .basin {
+    position: absolute;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+  }
+
+  .basin:hover, .basin:focus-visible { filter: brightness(1.18); }
+  .basin:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; }
+
+  .basin.selected { outline: 2px solid var(--text); outline-offset: -2px; }
+
+  .panel {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    padding: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow-y: auto;
+    font-family: var(--label);
+  }
+
+  .panel .placeholder {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin: auto 0;
+  }
+
+  .panel .basin-name {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .panel .risk-value {
+    font-family: var(--mono);
+    font-size: 2.4rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .panel .risk-caption { font-size: 0.78rem; color: var(--text-muted); margin-top: -0.4rem; }
+
+  .panel h3 {
+    margin: 0.2rem 0 0;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .asset-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+  .asset-list li {
+    font-size: 0.86rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: 0.3rem;
+  }
+  .asset-list li span.kind { color: var(--text-muted); font-size: 0.75rem; }
+
+  .sparkline-row { display: flex; align-items: center; gap: 0.6rem; }
+  .sparkline-row canvas { width: 120px; height: 28px; }
+  .sparkline-row span { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); }
+
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  .legend .gradient {
+    width: 160px;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(to right, var(--risk-low), var(--risk-mid), var(--risk-high));
+  }
+
+  footer {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    padding-top: 0.9rem;
+  }
+
+  @media (max-width: 640px) {
+    .risk-wrap { grid-template-columns: 1fr; height: auto; }
+    .risk-map { height: 300px; }
+    .panel { height: 220px; }
+  }
+</style>
+
+<header>
+  <div>
+    <div class="eyebrow">GeoSignal · prototipo de interfaz</div>
+    <h1>Incendio de Calvos de Randín (Ourense), septiembre 2026</h1>
+  </div>
+  <span class="badge">DEMO — datos de ejemplo, no son NISAR/Sentinel reales</span>
+</header>
+
+<section>
+  <div class="section-head">
+    <h2>Óptico (con humo) vs. radar NISAR (ve a través)</h2>
+    <span class="hint">arrastra el control ⇆</span>
+  </div>
+  <div class="compare" id="compare">
+    <canvas id="before-canvas" class="before-layer"></canvas>
+    <canvas id="after-canvas" class="after-layer"></canvas>
+    <span class="pane-label before">Óptico · con humo</span>
+    <span class="pane-label after">NISAR L-band · HV</span>
+    <div class="slider-handle" id="handle"></div>
+    <input id="reveal-slider" type="range" min="0" max="100" value="50" aria-label="Comparar óptico y radar" />
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>Riesgo por microcuenca</h2>
+    <span class="hint">haz clic en una cuenca</span>
+  </div>
+  <div class="risk-wrap">
+    <div class="risk-map" id="risk-map">
+      <canvas id="terrain-canvas"></canvas>
+      <!-- basin divs injected by script -->
+    </div>
+    <div class="panel" id="panel">
+      <p class="placeholder">Haz clic en una cuenca para ver su riesgo y qué hay aguas abajo.</p>
+    </div>
+  </div>
+  <div class="legend">
+    <span>riesgo bajo</span>
+    <div class="gradient"></div>
+    <span>riesgo alto</span>
+  </div>
+</section>
+
+<footer>
+  Prototipo interno — las fechas y track/frame de NISAR GCOV (124/68, 14-sep → 8-oct 2026) y SME2 ya
+  están confirmados en data/config.py; faltan pendiente del MDT, cuencas delimitadas y activos reales
+  de OSM. Ver web/app.js para la versión que lee datos reales.
+</footer>
+
+<script>
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function fitCanvas(canvas) {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    return { ctx, w: rect.width, h: rect.height };
+  }
+
+  // ---- terrain texture shared by both demos ----
+
+  function paintTerrain(ctx, w, h, rng, palette) {
+    const grad = ctx.createLinearGradient(0, 0, w, h);
+    grad.addColorStop(0, palette.ridgeLight);
+    grad.addColorStop(1, palette.ridgeDark);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    // contour-like bands
+    ctx.strokeStyle = palette.contour;
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 9; i++) {
+      ctx.beginPath();
+      const baseY = (h / 9) * i + rng() * 12;
+      ctx.moveTo(0, baseY);
+      for (let x = 0; x <= w; x += 24) {
+        const y = baseY + Math.sin(x * 0.02 + i) * 10 + (rng() - 0.5) * 6;
+        ctx.lineTo(x, y);
+      }
+      ctx.globalAlpha = 0.25;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // vegetation texture speckle
+    ctx.fillStyle = palette.speckle;
+    for (let i = 0; i < 260; i++) {
+      const x = rng() * w, y = rng() * h, r = rng() * 1.6 + 0.3;
+      ctx.globalAlpha = 0.18;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function paintBurnScar(ctx, w, h, rng, cx, cy, radius, color) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.beginPath();
+    const points = 16;
+    for (let i = 0; i <= points; i++) {
+      const angle = (i / points) * Math.PI * 2;
+      const r = radius * (0.72 + rng() * 0.42);
+      const x = Math.cos(angle) * r;
+      const y = Math.sin(angle) * r * 0.72;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    const grad = ctx.createRadialGradient(0, 0, radius * 0.1, 0, 0, radius);
+    grad.addColorStop(0, color.core);
+    grad.addColorStop(1, color.edge);
+    ctx.fillStyle = grad;
+    ctx.globalAlpha = 0.82;
+    ctx.fill();
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
+  // ---- compare panel ----
+
+  function drawCompare() {
+    const before = fitCanvas(document.getElementById("before-canvas"));
+    const after = fitCanvas(document.getElementById("after-canvas"));
+
+    const rngB = mulberry32(42);
+    paintTerrain(before.ctx, before.w, before.h, rngB, {
+      ridgeLight: "#5a5248", ridgeDark: "#2c2822", contour: "#6b6255", speckle: "#847a68",
+    });
+    // haze/smoke over the optical pane
+    const haze = before.ctx.createLinearGradient(0, 0, before.w, before.h);
+    haze.addColorStop(0, "rgba(214, 199, 170, 0.38)");
+    haze.addColorStop(1, "rgba(214, 199, 170, 0.08)");
+    before.ctx.fillStyle = haze;
+    before.ctx.fillRect(0, 0, before.w, before.h);
+
+    const rngA = mulberry32(42);
+    paintTerrain(after.ctx, after.w, after.h, rngA, {
+      ridgeLight: "#3a4a4f", ridgeDark: "#1c2729", contour: "#5c7278", speckle: "#6f8a8f",
+    });
+    paintBurnScar(after.ctx, after.w, after.h, mulberry32(7), after.w * 0.42, after.h * 0.55, after.w * 0.26, {
+      core: "rgba(226, 121, 60, 0.95)", edge: "rgba(194, 67, 46, 0.15)",
+    });
+  }
+
+  const slider = document.getElementById("reveal-slider");
+  const compare = document.getElementById("compare");
+  slider.addEventListener("input", () => {
+    compare.style.setProperty("--reveal", slider.value + "%");
+  });
+
+  // ---- risk map ----
+
+  const BASINS = [
+    {
+      name: "Cuenca de Randín (origen)", risk: 0.84,
+      poly: [[8, 10], [40, 4], [52, 28], [34, 52], [10, 42]],
+      assets: [{ name: "Randín", kind: "núcleo" }, { name: "Calvos de Randín", kind: "capital municipal" }],
+      moisture: [0.31, 0.29, 0.24, 0.19, 0.15, 0.22, 0.34],
+    },
+    {
+      name: "Cuenca de As Meaus", risk: 0.57,
+      poly: [[40, 4], [74, 2], [80, 26], [52, 28]],
+      assets: [{ name: "As Meaus", kind: "núcleo, Situación 2 preventiva" }],
+      moisture: [0.28, 0.27, 0.22, 0.20, 0.18, 0.26, 0.33],
+    },
+    {
+      name: "Cuenca de Baltar", risk: 0.39,
+      poly: [[74, 2], [98, 8], [94, 36], [80, 26]],
+      assets: [{ name: "Baltar", kind: "núcleo municipal" }],
+      moisture: [0.35, 0.34, 0.30, 0.28, 0.27, 0.31, 0.38],
+    },
+    {
+      name: "Cuenca alta (monte)", risk: 0.28,
+      poly: [[10, 42], [34, 52], [30, 78], [6, 72]],
+      assets: [],
+      moisture: [0.40, 0.39, 0.37, 0.35, 0.34, 0.37, 0.41],
+    },
+    {
+      name: "Cuenca 5 (sin verificar)", risk: 0.65,
+      poly: [[34, 52], [52, 28], [80, 26], [94, 36], [88, 64], [58, 82], [30, 78]],
+      assets: [{ name: "pendiente de cruzar con OSM", kind: "activo sin confirmar" }],
+      moisture: [0.26, 0.25, 0.21, 0.17, 0.14, 0.20, 0.30],
+    },
+  ];
+
+  function riskColor(r) {
+    const stops = [
+      [0, [58, 110, 165]],
+      [0.5, [226, 163, 60]],
+      [1, [194, 67, 46]],
+    ];
+    for (let i = 0; i < stops.length - 1; i++) {
+      const [p0, c0] = stops[i], [p1, c1] = stops[i + 1];
+      if (r >= p0 && r <= p1) {
+        const t = (r - p0) / (p1 - p0);
+        const c = c0.map((v, i) => Math.round(v + (c1[i] - v) * t));
+        return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+      }
+    }
+    return "rgb(194, 67, 46)";
+  }
+
+  function drawRiskTerrain() {
+    const terrain = fitCanvas(document.getElementById("terrain-canvas"));
+    paintTerrain(terrain.ctx, terrain.w, terrain.h, mulberry32(11), {
+      ridgeLight: "#454038", ridgeDark: "#211d18", contour: "#5a5248", speckle: "#6e6456",
+    });
+  }
+
+  function sparkline(canvas, values) {
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    const min = Math.min(...values), max = Math.max(...values);
+    const pad = 3;
+    const pts = values.map((v, i) => [
+      pad + (i / (values.length - 1)) * (w - pad * 2),
+      h - pad - ((v - min) / (max - min + 1e-6)) * (h - pad * 2),
+    ]);
+    const fillGrad = ctx.createLinearGradient(0, 0, 0, h);
+    fillGrad.addColorStop(0, "rgba(226, 121, 60, 0.35)");
+    fillGrad.addColorStop(1, "rgba(226, 121, 60, 0)");
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], h);
+    pts.forEach((p) => ctx.lineTo(p[0], p[1]));
+    ctx.lineTo(pts[pts.length - 1][0], h);
+    ctx.closePath();
+    ctx.fillStyle = fillGrad;
+    ctx.fill();
+
+    ctx.beginPath();
+    pts.forEach((p, i) => (i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1])));
+    ctx.strokeStyle = "#e2793c";
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+
+    const last = pts[pts.length - 1];
+    ctx.beginPath();
+    ctx.arc(last[0], last[1], 2.2, 0, Math.PI * 2);
+    ctx.fillStyle = "#ede6da";
+    ctx.fill();
+  }
+
+  function renderPanel(basin) {
+    const panel = document.getElementById("panel");
+    const assetsHtml = basin.assets.length
+      ? `<ul class="asset-list">${basin.assets
+          .map((a) => `<li>${a.name}<span class="kind">${a.kind}</span></li>`)
+          .join("")}</ul>`
+      : `<p class="hint">Sin activos registrados aguas abajo.</p>`;
+
+    panel.innerHTML = `
+      <div class="basin-name">${basin.name}</div>
+      <div class="risk-value" style="color:${riskColor(basin.risk)}">${basin.risk.toFixed(2)}</div>
+      <div class="risk-caption">riesgo medio (0–1), ponderado por severidad, pendiente y sequedad del suelo</div>
+      <h3>Aguas abajo</h3>
+      ${assetsHtml}
+      <h3>Humedad del suelo, últimas semanas</h3>
+      <div class="sparkline-row">
+        <canvas id="spark"></canvas>
+        <span>SME2 · demo</span>
+      </div>
+    `;
+    sparkline(panel.querySelector("#spark"), basin.moisture);
+  }
+
+  function buildBasins() {
+    const map = document.getElementById("risk-map");
+    BASINS.forEach((basin, i) => {
+      const xs = basin.poly.map((p) => p[0]), ys = basin.poly.map((p) => p[1]);
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const minY = Math.min(...ys), maxY = Math.max(...ys);
+      const el = document.createElement("div");
+      el.className = "basin";
+      el.tabIndex = 0;
+      el.setAttribute("role", "button");
+      el.setAttribute("aria-label", basin.name);
+      el.style.left = minX + "%";
+      el.style.top = minY + "%";
+      el.style.width = (maxX - minX) + "%";
+      el.style.height = (maxY - minY) + "%";
+      const clip = basin.poly
+        .map((p) => `${((p[0] - minX) / (maxX - minX)) * 100}% ${((p[1] - minY) / (maxY - minY)) * 100}%`)
+        .join(", ");
+      el.style.clipPath = `polygon(${clip})`;
+      el.style.background = riskColor(basin.risk);
+      el.style.opacity = "0.62";
+
+      const select = () => {
+        document.querySelectorAll(".basin").forEach((b) => b.classList.remove("selected"));
+        el.classList.add("selected");
+        renderPanel(basin);
+      };
+      el.addEventListener("click", select);
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(); }
+      });
+
+      map.appendChild(el);
+    });
+  }
+
+  drawCompare();
+  drawRiskTerrain();
+  buildBasins();
+  window.addEventListener("resize", () => { drawCompare(); drawRiskTerrain(); });
+</script>
