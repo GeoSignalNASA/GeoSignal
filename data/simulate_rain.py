@@ -21,7 +21,13 @@ from shapely.geometry import LineString
 N_SEEDS = 8
 MAX_STEPS = 4000
 
-DIRS = {1: (0, 1), 2: (1, 1), 4: (1, 0), 8: (1, -1), 16: (0, -1), 32: (-1, -1), 64: (-1, 0), 128: (-1, 1)}
+# (d_row, d_col) per pointer code. delineate_basins.py writes the pointer with
+# WhiteboxTools' default convention (1 = NE, clockwise), NOT ESRI's (1 = E):
+#   64 128   1
+#   32   0   2
+#   16   8   4
+# Decoding it as ESRI rotates every step 45 deg and the "channel" climbs uphill.
+DIRS = {1: (-1, 1), 2: (0, 1), 4: (1, 1), 8: (1, 0), 16: (1, -1), 32: (0, -1), 64: (-1, -1), 128: (-1, 0)}
 
 
 def seed_rowcols(perimeter_geojson, transform, n_seeds):

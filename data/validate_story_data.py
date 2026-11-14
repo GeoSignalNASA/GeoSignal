@@ -15,6 +15,7 @@ MANIFEST_PATH = os.path.join("data", "out", "aoi_manifest.json")
 STATS_PATH = os.path.join(ASSETS_DIR, "story_stats.json")
 BASINS_PATH = os.path.join(ASSETS_DIR, "basins_risk.geojson")
 OVERLAYS_JSON = os.path.join(ASSETS_DIR, "overlays", "overlays.json")
+RAIN_SIM_JSON = os.path.join(ASSETS_DIR, "rain_sim.json")
 MAX_ASSETS_BYTES = 3 * 1024 * 1024  # 3 MB
 
 
@@ -80,6 +81,20 @@ def main():
         full = os.path.join(ASSETS_DIR, rel)
         if not os.path.exists(full):
             errors.append(f"Falta overlay {name}: {full}")
+
+    # 5b. Simulación de lluvia 3D (opcional): vídeos presentes y balance de masa cerrado
+    if os.path.exists(RAIN_SIM_JSON):
+        with open(RAIN_SIM_JSON, encoding="utf-8") as f:
+            rain_sim = json.load(f)
+        n_frames = len(rain_sim["frame_hours"])
+        for sc in rain_sim["scenarios"]:
+            for key in ("video", "poster"):
+                if not os.path.exists(os.path.join("web", sc[key])):
+                    errors.append(f"Falta {key} de la simulación de lluvia: {sc[key]}")
+            if sc["mass_balance_error"] > 1e-6:
+                errors.append(f"Balance de masa roto en la simulación de {sc['rain_mm']} mm")
+            if len(sc["hydrograph_q_m3s"]) != n_frames:
+                errors.append(f"Hidrograma de {sc['rain_mm']} mm no coincide con los fotogramas del vídeo")
 
     # 6. Presupuesto de tamaño < 3 MB
     total_bytes = dir_size_bytes(ASSETS_DIR)

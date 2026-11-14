@@ -1,6 +1,6 @@
 import { I18N } from "./i18n.js";
 import { renderPhysicsDiagrams } from "./physics.js";
-import { renderHistogramChart, renderThresholdCurve, renderTimeseriesChart } from "./charts.js";
+import { renderHistogramChart, renderRainHydrograph, renderThresholdCurve, renderTimeseriesChart } from "./charts.js";
 
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const RUNOFF_COEFF = 0.6;
@@ -11,6 +11,7 @@ let OVERLAYS = null;
 let BASINS_GJ = null;
 let ASSETS_GJ = null;
 let RAIN_SEGS_GJ = null;
+let RAIN_SIM = null; // rain_sim.json (simulación PyVista); si falta, el capítulo 8 vuelve a las trazas 2D
 let FIRE_GJ = null;
 
 let map = null;
@@ -26,6 +27,10 @@ let activeBasinThreshold = "risk_mean";
 let activeRainMm = 60;
 let activeDhbMode = "classes"; // "classes" | "threshold" | "continuous"
 let assetMarkers = [];
+let rainSimScenario = null;
+let rainSimChart = null;
+let rainSimWantsPlay = !REDUCED_MOTION;
+let rainSimRaf = 0;
 
 function darkBaseStyle() {
   return {
@@ -253,12 +258,115 @@ function updateRainMapLayer(rainMm) {
     ]);
   }
 
-  const nearArea = RAIN_SEGS_GJ.features[0]?.properties.area_m2 || 0;
-  const maxArea = Math.max(...RAIN_SEGS_GJ.features.map((f) => f.properties.area_m2), 0);
-  const vNear = nearArea * (rainMm / 1000) * RUNOFF_COEFF;
-  const vMain = maxArea * (rainMm / 1000) * RUNOFF_COEFF;
-  document.getElementById("rain-v-near").textContent = `${fmtEs(vNear)} m³`;
-  document.getElementById("rain-v-main").textContent = `${fmtEs(vMain)} m³`;
+  setRainSimScenario(rainMm);
+}
+
+// --- Simulación 3D de lluvia (vídeos de data/simulate_rain_pyvista.py) ---
+
+function rainSimAvailable() {
+  return Boolean(RAIN_SIM && RAIN_SIM.scenarios && RAIN_SIM.scenarios.length);
+}
+
+function rainSimDuration() {
+  return RAIN_SIM.frame_hours.length / RAIN_SIM.fps;
+}
+
+function rainSimHourAt(timeS) {
+  const fh = RAIN_SIM.frame_hours;
+  return fh[Math.min(fh.length - 1, Math.max(0, Math.floor(timeS * RAIN_SIM.fps + 1e-6)))];
+}
+
+function rainSimTimeForHour(hour) {
+  const fh = RAIN_SIM.frame_hours;
+  let best = 0;
+  for (let i = 1; i < fh.length; i++) {
+    if (Math.abs(fh[i] - hour) < Math.abs(fh[best] - hour)) best = i;
+  }
+  return (best + 0.5) / RAIN_SIM.fps; // centro del fotograma
+}
+
+function seekRainSim(timeS) {
+  const video = document.getElementById("rain-sim-video");
+  loadRainSimVideo({ autoplay: false });
+  video.currentTime = Math.min(Math.max(timeS, 0), rainSimDuration() - 0.02);
+  syncRainSimUi(timeS);
+}
+
+function syncRainSimUi(forcedTimeS = null) {
+  if (!rainSimAvailable() || !rainSimScenario) return;
+  const video = document.getElementById("rain-sim-video");
+  const t = forcedTimeS ?? video.currentTime;
+  const hour = rainSimHourAt(t);
+  const storm = RAIN_SIM.storm_hours;
+
+  document.getElementById("rain-sim-clock").textContent = `${fmtEs(hour, 1)} h`;
+  document.getElementById("rain-sim-scrub").value = Math.round((t / rainSimDuration()) * 1000);
+  document.getElementById("rain-sim-badge").textContent =
+    hour < storm
+      ? `${fmtEs(hour, 1)} h · llueve · ${fmtEs((rainSimScenario.rain_mm * hour) / storm, 0)} mm caídos`
+      : `${fmtEs(hour, 1)} h · ya no llueve · recesión`;
+  const btn = document.getElementById("rain-sim-toggle");
+  btn.textContent = video.paused ? "Reproducir" : "Pausa";
+  btn.setAttribute("aria-label", video.paused ? "Reproducir la simulación" : "Pausar la simulación");
+  if (rainSimChart) rainSimChart.setHour(hour);
+}
+
+function rainSimLoop() {
+  syncRainSimUi();
+  const video = document.getElementById("rain-sim-video");
+  rainSimRaf = activeStep === "8" && !video.paused ? requestAnimationFrame(rainSimLoop) : 0;
+}
+
+function loadRainSimVideo({ autoplay = true } = {}) {
+  const video = document.getElementById("rain-sim-video");
+  if (!rainSimScenario) return;
+  if (video.dataset.scenario !== rainSimScenario.video) {
+    const resumeAt = video.currentTime || 0;
+    video.dataset.scenario = rainSimScenario.video;
+    video.preload = "auto";
+    video.poster = rainSimScenario.poster;
+    video.src = rainSimScenario.video;
+    if (resumeAt > 0) {
+      video.addEventListener("loadedmetadata", () => { video.currentTime = Math.min(resumeAt, video.duration - 0.02); }, { once: true });
+    }
+  }
+  if (autoplay && rainSimWantsPlay) video.play().catch(() => {});
+}
+
+function showRainSim(show) {
+  const wrap = document.getElementById("rain-sim-wrap");
+  const video = document.getElementById("rain-sim-video");
+  wrap.classList.toggle("visible", show);
+  if (show) loadRainSimVideo();
+  else if (!video.paused) video.pause();
+}
+
+function disableRainSim() {
+  // Vídeo o JSON no disponibles: el capítulo 8 vuelve a las trazas D8 en 2D
+  RAIN_SIM = null;
+  rainSimScenario = null;
+  document.getElementById("cap-8").classList.add("sim-unavailable");
+  showRainSim(false);
+  if (activeStep === "8") activateStep("8");
+}
+
+function setRainSimScenario(rainMm) {
+  if (!rainSimAvailable()) return;
+  const sc = RAIN_SIM.scenarios.reduce((best, cur) => (Math.abs(cur.rain_mm - rainMm) < Math.abs(best.rain_mm - rainMm) ? cur : best));
+  if (sc === rainSimScenario) return;
+  rainSimScenario = sc;
+
+  document.getElementById("rain-m-peak").textContent = `${fmtEs(sc.reservoir_peak_inflow_m3s, 1)} m³/s`;
+  document.getElementById("rain-m-arrival").textContent = `≈ ${fmtEs(sc.burned_arrival_hour, 1)} h`;
+  document.getElementById("rain-m-volume").textContent = `${fmtEs(sc.reservoir_inflow_hm3, 2)} hm³`;
+  document.getElementById("rain-m-burned").textContent = `${fmtEs(sc.reservoir_burned_hm3, 2)} hm³ (${fmtEs(sc.reservoir_burned_pct, 1)} %)`;
+
+  rainSimChart = renderRainHydrograph(document.getElementById("chart-rain-hydro"), RAIN_SIM, sc, {
+    readoutEl: document.getElementById("rain-chart-readout"),
+    onSeek: (hour) => seekRainSim(rainSimTimeForHour(hour)),
+  });
+  if (activeStep === "8") loadRainSimVideo();
+  syncRainSimUi();
 }
 
 function updateBasinSensitivity(field) {
@@ -323,6 +431,7 @@ function activateStep(stepId) {
   });
 
   showCompareMode(activeStep === "4");
+  showRainSim(activeStep === "8" && rainSimAvailable());
 
   if (!map) return;
 
@@ -399,11 +508,19 @@ function activateStep(stepId) {
       break;
     case "8":
       flyToCamera([-7.91, 41.915], 10.9);
+      updateRainMapLayer(activeRainMm);
+      if (rainSimAvailable()) {
+        updateHud("Capítulo 8 · Simulación de lluvia 3D", "Lluvia uniforme 24 h sobre el DEM real, enrutada por D8 (C = 0,6 asumido). Render PyVista.", [
+          { color: "#3d9bff", label: "Agua de la cuenca" },
+          { color: "#e2793c", label: "Agua del perímetro" },
+          { color: "#39e8e0", label: "Perímetro EFFIS" },
+        ]);
+        break;
+      }
       setLayerVisible("basins-outline", true);
       setLayerVisible("rain-lines", true);
       setLayerVisible("dem-edge-line", true);
       setAssetMarkersVisible(true);
-      updateRainMapLayer(activeRainMm);
       updateHud("Capítulo 8 · Escenario de lluvia", "Trazas D8 reales desde el perímetro × lluvia hipotética (C = 0,6 asumido).", [
         { color: "#39e8e0", label: "Escorrentía moderada" },
         { color: "#e2793c", label: "Caudal acumulado alto" },
@@ -560,13 +677,14 @@ function applyLanguage(lang) {
 }
 
 async function init() {
-  const [stats, overlays, basins, assets, fire, rain] = await Promise.all([
+  const [stats, overlays, basins, assets, fire, rain, rainSim] = await Promise.all([
     fetch("assets/data/story_stats.json").then((r) => r.json()),
     fetch("assets/data/overlays/overlays.json").then((r) => r.json()),
     fetch("assets/data/basins_risk.geojson").then((r) => r.json()),
     fetch("assets/data/assets.geojson").then((r) => r.json()),
     fetch("assets/data/fire_perimeter.geojson").then((r) => r.json()),
     fetch("assets/data/rain_channels.geojson").then((r) => r.json()),
+    fetch("assets/data/rain_sim.json").then((r) => (r.ok ? r.json() : null)).catch(() => null),
   ]);
 
   STATS = stats;
@@ -575,6 +693,12 @@ async function init() {
   ASSETS_GJ = assets;
   FIRE_GJ = fire;
   RAIN_SEGS_GJ = buildRainSegmentsGeoJson(rain);
+  RAIN_SIM = rainSim;
+  document.getElementById("cap-8").classList.toggle("sim-unavailable", !rainSimAvailable());
+  if (rainSimAvailable()) {
+    document.getElementById("rain-basin-km2").textContent = fmtEs(RAIN_SIM.domain.basin_km2, 0);
+  }
+  updateRainMapLayer(activeRainMm);
 
   populateExecutiveSummary();
   renderPhysicsDiagrams(document.getElementById("physics-diagrams"), activeLang);
@@ -696,6 +820,20 @@ async function init() {
     updateRainMapLayer(Number(e.target.value));
   });
 
+  const simVideo = document.getElementById("rain-sim-video");
+  simVideo.addEventListener("play", () => { if (!rainSimRaf) rainSimLoop(); });
+  ["pause", "seeked", "loadeddata"].forEach((evt) => simVideo.addEventListener(evt, () => syncRainSimUi()));
+  simVideo.addEventListener("error", () => { if (simVideo.getAttribute("src")) disableRainSim(); });
+  document.getElementById("rain-sim-toggle").addEventListener("click", () => {
+    if (!rainSimAvailable()) return;
+    rainSimWantsPlay = simVideo.paused;
+    if (rainSimWantsPlay) loadRainSimVideo();
+    else simVideo.pause();
+  });
+  document.getElementById("rain-sim-scrub").addEventListener("input", (e) => {
+    if (rainSimAvailable()) seekRainSim((Number(e.target.value) / 1000) * rainSimDuration());
+  });
+
   document.getElementById("btn-print").addEventListener("click", () => window.print());
   document.getElementById("btn-lang").addEventListener("click", () => {
     applyLanguage(activeLang === "es" ? "en" : "es");
@@ -710,7 +848,9 @@ async function init() {
         }
       }
     },
-    { threshold: 0.45, rootMargin: "-15% 0px -35% 0px" }
+    // Banda fina a ~45 % del alto de la ventana: se activa la tarjeta que la cruza.
+    // (Un umbral por fracción visible deja sin activar las tarjetas más altas que la ventana.)
+    { threshold: 0, rootMargin: "-42% 0px -53% 0px" }
   );
   document.querySelectorAll(".step-card[data-step]").forEach((el) => observer.observe(el));
 

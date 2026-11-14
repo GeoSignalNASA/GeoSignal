@@ -183,3 +183,117 @@ export function renderHistogramChart(container, hist) {
   container.innerHTML = "";
   container.appendChild(svg);
 }
+
+// 5. Hidrograma de la simulación de lluvia (capítulo 8): entrada al embalse, total vs
+//    procedente del perímetro quemado, con cursor sincronizado con el vídeo.
+//    Devuelve { setHour(h) } para mover el cursor sin volver a dibujar.
+export function renderRainHydrograph(container, sim, scenario, { readoutEl = null, onSeek = null } = {}) {
+  const W = 540, H = 176;
+  const pad = { l: 38, r: 12, t: 14, b: 26 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+  const C_ALL = "#3b93f2", C_BURN = "#da7335", INK = "#9c9284", GRID = "#2d2720", SURFACE = "#15130f";
+
+  const hours = sim.frame_hours;
+  const q = scenario.hydrograph_q_m3s;
+  const qb = scenario.hydrograph_burned_m3s;
+
+  // Escala Y común a todos los escenarios: mover la barra de lluvia se ve en la curva
+  const qMax = Math.max(...sim.scenarios.flatMap((s) => s.hydrograph_q_m3s), 1);
+  const rawStep = qMax / 3;
+  const pow = 10 ** Math.floor(Math.log10(rawStep));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * pow).find((v) => v >= rawStep);
+  const yTop = Math.ceil(qMax / step) * step;
+
+  const xAt = (h) => pad.l + (h / sim.sim_hours) * pw;
+  const yAt = (v) => pad.t + (1 - v / yTop) * ph;
+  const fmt = (v, d = 1) => Number(v).toLocaleString("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const nearest = (h) => {
+    let lo = 0, hi = hours.length - 1;
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >> 1;
+      if (hours[mid] < h) lo = mid; else hi = mid;
+    }
+    return Math.abs(hours[lo] - h) <= Math.abs(hours[hi] - h) ? lo : hi;
+  };
+
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `Hidrograma simulado de entrada al Embalse de Salas con ${scenario.rain_mm} mm en 24 h` });
+
+  // Ventana de lluvia (0–24 h)
+  svg.appendChild(el("rect", { x: xAt(0), y: pad.t, width: xAt(sim.storm_hours) - xAt(0), height: ph, fill: "rgba(59,147,242,0.07)" }));
+  svg.appendChild(el("text", { x: xAt(sim.storm_hours) - 5, y: pad.t + 10, "text-anchor": "end", fill: INK, "font-size": "8.5", "font-family": "monospace" }, `LLUEVE 0–${sim.storm_hours} h`));
+  svg.appendChild(el("text", { x: xAt(sim.storm_hours) + 5, y: pad.t + 10, fill: INK, "font-size": "8.5", "font-family": "monospace" }, "RECESIÓN"));
+
+  for (let v = 0; v <= yTop + 1e-9; v += step) {
+    const y = yAt(v);
+    svg.appendChild(el("line", { x1: pad.l, y1: y, x2: W - pad.r, y2: y, stroke: GRID, "stroke-width": "1" }));
+    svg.appendChild(el("text", { x: pad.l - 6, y: y + 3, "text-anchor": "end", fill: INK, "font-size": "9", "font-family": "monospace" }, fmt(v, 0)));
+  }
+  for (let h = 0; h <= sim.sim_hours; h += 6) {
+    svg.appendChild(el("text", { x: xAt(h), y: H - 9, "text-anchor": "middle", fill: INK, "font-size": "8.5", "font-family": "monospace" }, `${h} h`));
+  }
+
+  const line = (vals) => vals.map((v, i) => `${i === 0 ? "M" : "L"}${xAt(hours[i]).toFixed(1)},${yAt(v).toFixed(1)}`).join(" ");
+  const area = (vals) => `${line(vals)} L${xAt(hours[hours.length - 1]).toFixed(1)},${yAt(0).toFixed(1)} L${xAt(hours[0]).toFixed(1)},${yAt(0).toFixed(1)} Z`;
+  svg.appendChild(el("path", { d: area(q), fill: C_ALL, opacity: "0.1" }));
+  svg.appendChild(el("path", { d: area(qb), fill: C_BURN, opacity: "0.16" }));
+  svg.appendChild(el("path", { d: line(q), fill: "none", stroke: C_ALL, "stroke-width": "2", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+  svg.appendChild(el("path", { d: line(qb), fill: "none", stroke: C_BURN, "stroke-width": "2", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+
+  // Hairline de hover (gris) y cursor de reproducción (claro) con sus marcadores
+  const hover = el("line", { y1: pad.t, y2: pad.t + ph, stroke: INK, "stroke-width": "1", visibility: "hidden" });
+  const cursor = el("line", { y1: pad.t, y2: pad.t + ph, stroke: "#ede6da", "stroke-width": "1.4" });
+  const dotAll = el("circle", { r: 4, fill: C_ALL, stroke: SURFACE, "stroke-width": "2" });
+  const dotBurn = el("circle", { r: 4, fill: C_BURN, stroke: SURFACE, "stroke-width": "2" });
+  svg.append(hover, cursor, dotAll, dotBurn);
+
+  let playIdx = 0;
+  let hoverIdx = null;
+  const paint = () => {
+    const x = xAt(hours[playIdx]);
+    cursor.setAttribute("x1", x);
+    cursor.setAttribute("x2", x);
+    const i = hoverIdx ?? playIdx;
+    dotAll.setAttribute("cx", xAt(hours[i]));
+    dotAll.setAttribute("cy", yAt(q[i]));
+    dotBurn.setAttribute("cx", xAt(hours[i]));
+    dotBurn.setAttribute("cy", yAt(qb[i]));
+    if (readoutEl) readoutEl.textContent = `${fmt(hours[i])} h · ${fmt(q[i])} · perímetro ${fmt(qb[i], 2)}`;
+  };
+
+  // Zona de impacto: todo el área de trazado (el puntero solo tiene que acertar con la hora)
+  const hit = el("rect", { x: pad.l, y: pad.t, width: pw, height: ph, fill: "transparent", style: onSeek ? "cursor:pointer" : "" });
+  const hourFromEvent = (ev) => {
+    const box = svg.getBoundingClientRect();
+    const vx = ((ev.clientX - box.left) / box.width) * W;
+    return Math.min(sim.sim_hours, Math.max(0, ((vx - pad.l) / pw) * sim.sim_hours));
+  };
+  hit.addEventListener("pointermove", (ev) => {
+    hoverIdx = nearest(hourFromEvent(ev));
+    const x = xAt(hours[hoverIdx]);
+    hover.setAttribute("x1", x);
+    hover.setAttribute("x2", x);
+    hover.setAttribute("visibility", "visible");
+    paint();
+  });
+  hit.addEventListener("pointerleave", () => {
+    hoverIdx = null;
+    hover.setAttribute("visibility", "hidden");
+    paint();
+  });
+  if (onSeek) hit.addEventListener("click", (ev) => onSeek(hours[nearest(hourFromEvent(ev))]));
+  svg.appendChild(hit);
+
+  container.innerHTML = "";
+  container.appendChild(svg);
+  paint();
+
+  return {
+    setHour(h) {
+      const i = nearest(h);
+      if (i === playIdx) return;
+      playIdx = i;
+      paint();
+    },
+  };
+}

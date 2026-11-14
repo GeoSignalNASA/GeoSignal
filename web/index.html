@@ -283,24 +283,45 @@
         <div class="step-num"><span>Capítulo 08 · Escenario hídrico</span><span class="step-badge hyp">ESCENARIO HIPOTÉTICO</span></div>
         <h2>¿Por dónde bajaría el agua desde el perímetro quemado?</h2>
         <p>
-          Las trazas siguen la dirección de flujo real (D8) calculada sobre el DEM desde 8 puntos del perímetro hacia la
-          red del Limia y el Embalse de Salas. Lo <strong>hipotético</strong> es la intensidad de lluvia: ajusta la barra
-          para estimar el volumen acumulado asumiendo un coeficiente de escorrentía <code>C = 0,6</code> (no medido in situ).
+          La vista 3D es una <strong>simulación de lluvia-escorrentía</strong> sobre el relieve real (DEM GLO-30, renderizada
+          con PyVista): llueve de forma uniforme durante 24 h sobre los <span id="rain-basin-km2">170</span> km² de cuenca que
+          drenan el perímetro y el agua se enruta celda a celda siguiendo la dirección de flujo D8 hasta el Embalse de Salas.
+          En <strong style="color:var(--accent)">naranja</strong>, el agua generada dentro del perímetro quemado; en
+          <strong style="color:#5aa9f5">azul</strong>, la del resto de la cuenca; el embalse se enturbia cuando le llega
+          agua del perímetro. Lo <strong>hipotético</strong> es la
+          lluvia y el coeficiente de escorrentía <code>C = 0,6</code> (no medido in situ).
         </p>
         <div class="control-box">
           <label for="rain-slider">
             <span>Lluvia hipotética en 24h:</span>
             <strong id="rain-val-label" style="color:var(--cyan);font-family:var(--mono)">60 mm</strong>
           </label>
-          <input id="rain-slider" type="range" min="0" max="150" step="5" value="60" />
+          <input id="rain-slider" type="range" min="30" max="150" step="30" value="60" />
+          <div class="sim-transport" id="rain-sim-transport">
+            <button class="pill-btn" id="rain-sim-toggle" type="button" aria-label="Pausar la simulación">Pausa</button>
+            <input id="rain-sim-scrub" type="range" min="0" max="1000" step="1" value="0" aria-label="Instante de la simulación" />
+            <span class="sim-clock" id="rain-sim-clock">0,0 h</span>
+          </div>
+          <div class="sim-chart" id="rain-sim-chart-wrap">
+            <div class="chart-title"><span>Entrada al Embalse de Salas (m³/s)</span><span id="rain-chart-readout"></span></div>
+            <div class="sim-chart-legend">
+              <span><i style="background:#3b93f2"></i>Toda la cuenca</span>
+              <span><i style="background:#da7335"></i>Procedente del perímetro quemado</span>
+            </div>
+            <div id="chart-rain-hydro"></div>
+          </div>
           <div class="mini-metrics">
-            <div class="mini-metric"><div class="k">Volumen cerca del fuego</div><div class="v" id="rain-v-near">—</div></div>
-            <div class="mini-metric"><div class="k">Volumen en cauce principal</div><div class="v" id="rain-v-main">—</div></div>
+            <div class="mini-metric"><div class="k">Entrada punta al embalse</div><div class="v" id="rain-m-peak">—</div></div>
+            <div class="mini-metric"><div class="k">Llegada del agua del perímetro</div><div class="v" id="rain-m-arrival">—</div></div>
+            <div class="mini-metric"><div class="k">Volumen que entra en 36 h</div><div class="v" id="rain-m-volume">—</div></div>
+            <div class="mini-metric"><div class="k">…del cual sale del perímetro</div><div class="v" id="rain-m-burned">—</div></div>
           </div>
         </div>
         <div class="callout-warn">
-          <strong>Límite del DEM descargado:</strong> los cauces hacia el oeste se detienen en la línea discontinua de
-          <code>−8,0°</code> de longitud porque ahí termina la teja GLO-30 descargada, no porque el agua se pare ahí.
+          <strong>Límites de la simulación:</strong> el bloque 3D termina en <code>−8,0°</code> de longitud porque ahí acaba
+          la teja GLO-30 descargada, no porque el agua se pare ahí. La rugosidad de Manning, la anchura de cauce y el embalse
+          tratado como sumidero sin vertido son supuestos: los tiempos de llegada son órdenes de magnitud, no una
+          predicción de avenida.
         </div>
       </article>
 
@@ -332,6 +353,10 @@
             <div id="before-map"></div>
             <div id="after-map"></div>
           </div>
+        </div>
+        <div id="rain-sim-wrap">
+          <video id="rain-sim-video" muted loop playsinline preload="none" aria-label="Simulación 3D de lluvia y escorrentía sobre la cuenca del Salas"></video>
+          <div class="sim-badge" id="rain-sim-badge"></div>
         </div>
         <div class="map-hud">
           <div class="map-hud-title" id="hud-title">GeoSignal</div>
@@ -369,7 +394,7 @@
       (1) El radar no mide hidrofobicidad química ni granulometría del suelo;
       (2) la lluvia previa a la pasada puede elevar la retrodispersión y enmascarar pérdidas leves de copa;
       (3) la cobertura ESA WorldCover corresponde a 2021;
-      (4) la simulación de lluvia usa C = 0,6 asumido y se trunca en −8,0° W;
+      (4) la simulación de lluvia usa C = 0,6 y parámetros hidráulicos supuestos (Manning, anchura de cauce, embalse sin vertido) y se trunca en −8,0° W;
       (5) las pasadas NISAR son productos en fase <em>Provisional</em>.
     </div>
 
@@ -377,6 +402,7 @@
 python data/fetch_context_layers.py
 python data/extract_aoi_stack.py
 python data/build_story_data.py
+python data/simulate_rain_pyvista.py
 python data/validate_story_data.py</pre>
   </section>
 

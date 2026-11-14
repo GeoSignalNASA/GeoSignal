@@ -15,6 +15,8 @@ data/
   compute_slope.py      Copernicus DEM GLO-30 -> slope.tif alineado a burn_severity.tif
   delineate_basins.py   DEM -> microcuencas reales (WhiteboxTools) -> basins.geojson
   risk_index.py         quema x (pendiente + sequedad) -> riesgo por cuenca
+  simulate_rain.py      trazas D8 desde el perímetro -> rain_channels.geojson
+  simulate_rain_pyvista.py  simulación 3D de lluvia-escorrentía (PyVista) -> vídeos del capítulo 08
 web/
   index.html / app.js / style.css   slider óptico-vs-radar + mapa de riesgo
   demo.html             maqueta sin datos reales, para probar la interacción
@@ -145,8 +147,38 @@ El explorador técnico original sigue disponible en `web/real_demo.html`. Para r
 ```bash
 python data/extract_aoi_stack.py
 python data/build_story_data.py
+python data/simulate_rain_pyvista.py
 python data/validate_story_data.py
 ```
+
+### Simulación de lluvia 3D (capítulo 08)
+
+`data/simulate_rain_pyvista.py` sustituye al mapa 2D de trazas del capítulo 08 por
+una simulación temporal renderizada con PyVista sobre el DEM real:
+
+- Delimita la cuenca que drena el perímetro hasta el borde de la teja GLO-30
+  (170 km², puntero D8 de `data/raw/hydro/`), hace llover uniforme 24 h y
+  enruta el agua celda a celda (onda cinemática explícita con Manning). El
+  balance de masa se comprueba en cada ejecución y el script aborta si no cierra.
+- Un trazador sigue el agua generada dentro del perímetro EFFIS: en el vídeo
+  sale en naranja y el resto de la cuenca en azul.
+- Escribe un MP4 + póster por escenario (30/60/90/120/150 mm) en
+  `web/assets/video/` y las métricas e hidrogramas en
+  `web/assets/data/rain_sim.json`. Si esos archivos faltan, la web vuelve sola
+  a las trazas 2D de `rain_channels.geojson`.
+- Necesita `ffmpeg` en el PATH. `--preview DIR` guarda 7 PNG por escenario sin
+  codificar vídeo, para ajustar cámara y colores. Tarda ~3 min por escenario.
+
+Real: relieve, direcciones de flujo, áreas contribuyentes, perímetro y lámina
+del embalse. Supuesto: la lluvia, `C = 0,6`, la rugosidad de Manning (0,10
+ladera / 0,05 cauce), la anchura de cauce (`1,5·√A`) y el Embalse de Salas como
+sumidero sin vertido. Los tiempos de llegada son órdenes de magnitud.
+
+**Ojo con la convención del puntero D8:** `delineate_basins.py` lo escribe con
+la convención de WhiteboxTools (1 = NE, en sentido horario), no la de ESRI
+(1 = E). `simulate_rain.py` lo decodificaba como ESRI y las trazas subían
+cuesta arriba en un tercio de los pasos; corregido el 2026-11-14 y
+`rain_channels.geojson` regenerado.
 
 ## Validación mínima antes de construir sobre esto
 
