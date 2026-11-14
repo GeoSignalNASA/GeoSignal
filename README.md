@@ -131,21 +131,22 @@ nivel de más abajo, en `data/data/raw/`.
 10. Exporta la severidad a PNG para el slider:
     `gdal_translate -of PNG -scale data/out/burn_severity.tif web/data/severity.png`
 
-## Web (equipo de frontend)
+## Web (StoryMap + exploradores)
 
-No necesita esperar al pipeline completo: `web/app.js` ya apunta a
-`web/data/basins_risk.geojson` y `web/data/severity.png`, así que podéis
-trabajar con datos de prueba mientras el pipeline no esté listo. También
-hay un mockup 100% autocontenido en `web/demo.html` (datos de ejemplo,
-pensado para probar la interacción del slider y el clic por cuenca).
+El punto de entrada principal (`web/index.html`) es un **informe narrativo estilo StoryMap** en 11 capítulos sobre el incendio de Calvos de Randín (Ourense, sep 2026) con la serie temporal completa de NISAR desde junio de 2026, comparativa óptico-vs-radar, sensibilidad multinivel en `dB` (`-1.5` / `-3.0` / `-6.0 dB`), cruce con coberturas ESA WorldCover, riesgo hidrogeomorfológico por microcuenca y simulación dinámica de escorrentía:
 
-```
-cd web && python -m http.server 8000
+```bash
+devenv up   # o: cd web && python -m http.server 8000
+# -> http://localhost:8000/
 ```
 
-Pendiente de conectar: la capa óptica (Sentinel-2) del panel "before" en
-`app.js` usa de momento el mismo tile de OSM — hay que cambiarla por una
-fuente Sentinel-2 real de la fecha del incendio para que se vea el humo.
+El explorador técnico original sigue disponible en `web/real_demo.html`. Para regenerar los insumos ligeros (`web/assets/data/`) desde las escenas `.h5` locales:
+
+```bash
+python data/extract_aoi_stack.py
+python data/build_story_data.py
+python data/validate_story_data.py
+```
 
 ## Validación mínima antes de construir sobre esto
 

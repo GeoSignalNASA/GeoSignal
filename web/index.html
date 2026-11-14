@@ -2,43 +2,386 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>GeoSignal — Madrid-Ávila</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="https://unpkg.com/@mapbox/mapbox-gl-compare@0.4.3/dist/mapbox-gl-compare.css" />
-  <link rel="stylesheet" href="style.css" />
+  <title>GeoSignal — Informe NISAR sobre Calvos de Randín</title>
+  <link rel="stylesheet" href="vendor/maplibre-gl.css" />
+  <link rel="stylesheet" href="vendor/maplibre-gl-compare.css" />
+  <link rel="stylesheet" href="story/story.css" />
 </head>
 <body>
-  <header>
-    <h1>Incendio Madrid–Ávila — óptico vs. radar, severidad y riesgo por cuenca</h1>
+  <header class="topbar">
+    <div class="topbar-brand">
+      <strong>GeoSignal</strong>
+      <span class="sub" id="brand-sub">Calvos de Randín · Informe NISAR</span>
+    </div>
+    <nav class="toc-pills" aria-label="Capítulos del informe">
+      <a class="toc-pill active" data-step="0" href="#resumen">Resumen</a>
+      <a class="toc-pill" data-step="1" href="#cap-1">1. Incendio</a>
+      <a class="toc-pill" data-step="2" href="#cap-2">2. Física SAR</a>
+      <a class="toc-pill" data-step="3" href="#cap-3">3. Serie Jul–Oct</a>
+      <a class="toc-pill" data-step="4" href="#cap-4">4. Óptico vs Radar</a>
+      <a class="toc-pill" data-step="5" href="#cap-5">5. Niveles dB</a>
+      <a class="toc-pill" data-step="6" href="#cap-6">6. Qué mide</a>
+      <a class="toc-pill" data-step="7" href="#cap-7">7. Cuencas</a>
+      <a class="toc-pill" data-step="8" href="#cap-8">8. Lluvia</a>
+      <a class="toc-pill" data-step="9" href="#cap-9">9. Futuro</a>
+      <a class="toc-pill" data-step="10" href="#cap-10">10. Límites</a>
+    </nav>
+    <div class="topbar-actions">
+      <button class="btn-ghost" id="btn-lang" type="button">EN</button>
+      <button class="btn-ghost" id="btn-print" type="button">Imprimir / PDF</button>
+    </div>
   </header>
+  <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
 
-  <section id="compare-section">
-    <h2>Óptico (con humo/nubes) vs. radar NISAR (ve a través)</h2>
-    <div id="compare-container">
-      <div id="before-map" class="map"></div>
-      <div id="after-map" class="map"></div>
+  <!-- CAPÍTULO 0: RESUMEN EJECUTIVO -->
+  <section class="hero" id="resumen">
+    <div class="eyebrow" id="hero-eyebrow">NASA Space Apps · Dancing with the SARs · Informe estructurado</div>
+    <h1 id="hero-title">Calvos de Randín: radiografía radar de un incendio y su riesgo hídrico posterior</h1>
+    <p class="hero-lead" id="hero-lead">
+      Serie temporal NISAR en Banda L (junio–octubre 2026), análisis por niveles de decibelios (dB),
+      contraste óptico bajo humo y nubes, y susceptibilidad de escorrentía sobre 26 microcuencas reales.
+    </p>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="k">Perímetro oficial (Xunta)</div>
+        <div class="v" id="kpi-xunta">—</div>
+        <div class="s" id="kpi-xunta-sub">2.º mayor incendio en Galicia en 2026</div>
+      </div>
+      <div class="kpi-card">
+        <div class="k">Detección NRT (EFFIS)</div>
+        <div class="v" id="kpi-effis">—</div>
+        <div class="s">Contorno térmico/óptico automático (fire_id 15925129)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="k">Núcleo severo NISAR (≤ −1,5 dB)</div>
+        <div class="v" id="kpi-nisar-smooth" style="color:var(--accent)">—</div>
+        <div class="s" id="kpi-nisar-sub">Suavizado 100 m frente a 20 m raw</div>
+      </div>
+      <div class="kpi-card">
+        <div class="k">Desplome medio ΔHV</div>
+        <div class="v" id="kpi-dhv" style="color:var(--cyan)">—</div>
+        <div class="s" id="kpi-dhv-sub">Perímetro vs zona de control</div>
+      </div>
+      <div class="kpi-card">
+        <div class="k">Microcuencas críticas</div>
+        <div class="v" id="kpi-basins">—</div>
+        <div class="s" id="kpi-basins-sub">Lideran las 26 cuencas delineadas del DEM</div>
+      </div>
+    </div>
+
+    <div class="area-compare-bar">
+      <h3>Tres cifras reales sobre el mismo incendio — por qué no coinciden y por qué importa</h3>
+      <div class="bar-row">
+        <span>EFFIS automático (contorno exterior)</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-effis" style="background:var(--cyan)"></div></div>
+        <span class="bar-val" id="val-effis">—</span>
+      </div>
+      <div class="bar-row">
+        <span>Xunta oficial (370 arbolado + 148 pasto)</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-xunta" style="background:var(--green)"></div></div>
+        <span class="bar-val" id="val-xunta">—</span>
+      </div>
+      <div class="bar-row">
+        <span>NISAR Banda L 20 m sin suavizar (con speckle)</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-raw" style="background:var(--amber)"></div></div>
+        <span class="bar-val" id="val-raw">—</span>
+      </div>
+      <div class="bar-row">
+        <span>NISAR Banda L suavizado 100 m (núcleo de copa)</span>
+        <div class="bar-track"><div class="bar-fill" id="bar-smooth" style="background:var(--accent)"></div></div>
+        <span class="bar-val" id="val-smooth">—</span>
+      </div>
     </div>
   </section>
 
-  <section id="risk-section">
-    <h2>Riesgo por microcuenca</h2>
-    <div id="risk-map-wrap">
-      <div id="risk-map" class="map"></div>
-      <aside id="basin-panel">
-        <p class="placeholder">Haz clic en una cuenca para ver su riesgo y qué hay aguas abajo.</p>
-      </aside>
+  <!-- CUERPO SCROLLYTELLING -->
+  <main class="scrolly-shell">
+    <div class="narrative-col">
+
+      <article class="step-card is-active" data-step="1" id="cap-1">
+        <div class="step-num"><span>Capítulo 01 · Cronología y territorio</span><span class="step-badge">DATO REAL</span></div>
+        <h2>El incendio de Calvos de Randín (24–27 de septiembre de 2026)</h2>
+        <p>
+          El fuego comenzó el <strong>24 de septiembre de 2026 a las 12:32</strong> en la parroquia de Randín (Ourense),
+          en la frontera hispano-portuguesa y en cabecera de los ríos <strong>Limia y Salas</strong>. Fue controlado el
+          27 de septiembre tras obligar a activar la <strong>Situación 2 preventiva</strong> sobre el núcleo de
+          <strong>As Meaus (Baltar)</strong>.
+        </p>
+        <p>
+          En lugar de recortar estadísticas con un rectángulo arbitrario (que sobreestima la superficie ~4,5×),
+          usamos el polígono NRT real de <strong>Copernicus EFFIS</strong> y los núcleos y embalses reales de OpenStreetMap
+          aguas abajo.
+        </p>
+      </article>
+
+      <article class="step-card" data-step="2" id="cap-2">
+        <div class="step-num"><span>Capítulo 02 · Fundamentos físicos</span><span class="step-badge">FÍSICA SAR</span></div>
+        <h2>Cómo «ve» un radar de 24 cm a través del humo</h2>
+        <p>
+          Los satélites ópticos (Sentinel-2, Landsat) son sensores <em>pasivos</em>: dependen de la luz solar reflejada y
+          quedan ciegos bajo humo denso o nubes. <strong>NISAR</strong> es un radar <em>activo</em> en <strong>Banda L (~24 cm)</strong>:
+          emite sus propios pulsos de microondas, atraviesa humo y nubes de día o de noche, y penetra en las copas de los árboles.
+        </p>
+        <div class="physics-grid" id="physics-diagrams"></div>
+        <div class="human-tip">
+          <strong>En lenguaje de terreno:</strong><br/>
+          · <strong>HV (polarización cruzada)</strong> = detector de volumen 3D del bosque (ramas y hojas). Si el fuego consume la copa, <strong>HV se desploma</strong>.<br/>
+          · <strong>HH (polarización paralela)</strong> = sensible al suelo desnudo, humedad superficial y <em>doble rebote</em> en troncos en pie.<br/>
+          · <strong>Decibelios (dB)</strong>: <code>−1,5 dB</code> equivale a perder <strong>29 %</strong> de la energía devuelta; <code>−3 dB</code>, el <strong>50 %</strong>; <code>−6 dB</code>, el <strong>75 %</strong>.
+        </div>
+      </article>
+
+      <article class="step-card" data-step="3" id="cap-3">
+        <div class="step-num"><span>Capítulo 03 · Serie julio–octubre</span><span class="step-badge">10 PASADAS NISAR</span></div>
+        <h2>De julio a octubre: por qué la caída del 1 de octubre no es ruido</h2>
+        <p>
+          NISAR cartografía este corredor (<strong>Track 15 / Frame 23 ascendente</strong>) cada <strong>12 días</strong>.
+          Comparar solo dos fechas podría confundirse con cambios estacionales de humedad. Al analizar toda la serie
+          disponible desde junio–julio de 2026 frente a una <strong>zona de control exterior no quemada</strong>, la
+          estabilidad previa contrasta con el escalón abrupto tras el incendio.
+        </p>
+        <div class="chart-box">
+          <div class="chart-title"><span>HV medio (dB) · clic en un punto para ver la pasada</span><span>barras: SME2 humedad</span></div>
+          <div id="chart-timeseries"></div>
+          <div id="ts-selected-readout" style="font-family:var(--mono);font-size:0.75rem;color:var(--cyan);margin-top:0.4rem"></div>
+        </div>
+        <p style="font-size:0.86rem;color:var(--text-muted)">
+          Los puntos amarillos marcan pasadas señaladas en auditoría de estabilidad radiométrica (productos <em>Provisional</em>); se conservan con aviso explícito.
+        </p>
+      </article>
+
+      <article class="step-card" data-step="4" id="cap-4">
+        <div class="step-num"><span>Capítulo 04 · Evidencia visual</span><span class="step-badge">SENTINEL-2 vs NISAR</span></div>
+        <h2>Óptico ciego por humo y nubes frente a radar nítido</h2>
+        <p>
+          El <strong>25 de septiembre</strong> (incendio activo), Sentinel-2 registra la columna de humo tapando el monte;
+          el <strong>28 de septiembre</strong>, el 89 % de la escena está cubierta por nubes justo cuando los equipos necesitan evaluar daños.
+          NISAR Banda L obtiene una radiografía limpia en su pasada del <strong>1 de octubre</strong>.
+        </p>
+        <div class="control-box">
+          <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.35rem">Panel izquierdo (óptico Sentinel-2 real):</div>
+          <div class="pill-group">
+            <button class="pill-btn active" type="button" data-opt-key="optical_fire.jpg">25-sep (humo activo)</button>
+            <button class="pill-btn" type="button" data-opt-key="optical_clouds.jpg">28-sep (89% nubes)</button>
+          </div>
+          <div style="font-size:0.78rem;color:var(--text-muted);margin:0.5rem 0 0.35rem">Panel derecho (NISAR Banda L):</div>
+          <div class="pill-group">
+            <button class="pill-btn active" type="button" data-rad-key="dhv_classes.png">Severidad ΔHV (clases dB)</button>
+            <button class="pill-btn" type="button" data-rad-key="hv_post.png">HV post (01-oct)</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="step-card" data-step="5" id="cap-5">
+        <div class="step-num"><span>Capítulo 05 · Análisis por niveles de dB</span><span class="step-badge">INTERACTIVO</span></div>
+        <h2>Qué revela cada nivel de caída en decibelios (ΔHV)</h2>
+        <p>
+          No todo lo que arde pierde la misma estructura. Dividir <code>ΔHV = HV(01-oct) − HV(19-sep)</code> en umbrales
+          físicos de energía devuelta permite distinguir afección moderada de calcinación total del dosel:
+        </p>
+
+        <table class="data-table">
+          <thead>
+            <tr><th>Nivel ΔHV</th><th class="num">Hectáreas</th><th class="num">% perímetro</th></tr>
+          </thead>
+          <tbody id="db-classes-tbody"></tbody>
+        </table>
+
+        <div class="control-box">
+          <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.35rem">Pasada / calibración mostrada en tabla y mapa:</div>
+          <div class="pill-group" style="margin-bottom:0.55rem">
+            <button class="pill-btn active" type="button" data-dhb-mode="classes">01-oct bruto (88,8 ha)</button>
+            <button class="pill-btn" type="button" data-dhb-mode="oct01_cal">01-oct sin sesgo lluvia (221,0 ha)</button>
+            <button class="pill-btn" type="button" data-dhb-mode="oct25">25-oct seco consolidado (373,6 ha)</button>
+            <button class="pill-btn" type="button" data-dhb-mode="threshold">Umbral vivo en mapa</button>
+            <button class="pill-btn" type="button" data-dhb-mode="continuous">Rampa continua</button>
+          </div>
+          <div class="human-tip" id="dhb-calibration-note" style="margin:0 0 0.65rem;font-size:0.8rem">
+            La pasada del <strong>1 de octubre</strong> registró un salto de humedad (SME2 0,18→0,23 m³/m³) que elevó el anillo de control en <strong>+1,22 dB</strong>. Descontando ese sesgo aparecen 221 ha; al secarse el suelo el <strong>25 de octubre</strong> emergen <strong>373,6 ha</strong> (≈ 370 ha arboladas oficiales).
+          </div>
+          <label for="db-slider">
+            <span>Umbral interactivo ΔHV:</span>
+            <strong id="db-slider-val" style="color:var(--accent);font-family:var(--mono)">-1.50 dB</strong>
+          </label>
+          <input id="db-slider" type="range" min="-8" max="-0.5" step="0.25" value="-1.5" />
+          <div class="pill-group">
+            <button class="pill-btn" type="button" data-db-preset="-1.5">-1,5 dB (estándar)</button>
+            <button class="pill-btn" type="button" data-db-preset="-3.0">-3,0 dB (-50% señal)</button>
+            <button class="pill-btn" type="button" data-db-preset="-6.0">-6,0 dB (-75% señal)</button>
+          </div>
+          <div class="mini-metrics">
+            <div class="mini-metric"><div class="k">Área quemada (100 m)</div><div class="v" id="db-ha-smooth">—</div></div>
+            <div class="mini-metric"><div class="k">Área 20 m sin suavizar</div><div class="v" id="db-ha-raw">—</div></div>
+            <div class="mini-metric"><div class="k">Falsos positivos (control)</div><div class="v" id="db-fp-rate">—</div></div>
+            <div class="mini-metric"><div class="k">Energía de copa perdida</div><div class="v" id="db-energy-loss">—</div></div>
+          </div>
+        </div>
+
+        <div class="chart-box">
+          <div class="chart-title"><span>Hectáreas vs umbral dB</span><span>amarillo = falsos positivos fuera</span></div>
+          <div id="chart-threshold"></div>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title"><span>Distribución ΔHV: perímetro (naranja) vs control (cian)</span></div>
+          <div id="chart-histogram"></div>
+        </div>
+      </article>
+
+      <article class="step-card" data-step="6" id="cap-6">
+        <div class="step-num"><span>Capítulo 06 · Validez científica</span><span class="step-badge">HH vs HV · WORLDCOVER</span></div>
+        <h2>Qué mide el radar (y qué no): 239 vs 89 ha, polarizaciones y suelo</h2>
+        <p>
+          Sin filtro espacial (a 20 m), el umbral de <code>−1,5 dB</code> marca <strong>239 ha</strong>, pero gran parte es
+          <em>speckle</em> radar (la zona de control no quemada también dispara falsos positivos). Aplicando un suavizado
+          boxcar de 100 m (<em>multilooking</em> estándar), el ruido se colapsa y queda el núcleo real de daño en copa.
+        </p>
+        <p>
+          ¿Y por qué queda por debajo de las 518 ha oficiales (370 arbolado + 148 pasto)? Cruzando <strong>ΔHV</strong>
+          con <strong>ESA WorldCover 2021</strong> dentro del perímetro real comprobamos cómo responde cada cobertura a la
+          onda de 24 cm:
+        </p>
+
+        <table class="data-table">
+          <thead>
+            <tr><th>Cobertura (WorldCover)</th><th class="num">Área EFFIS</th><th class="num">ΔHV 01-oct (neto)</th><th class="num">ΔHV 25-oct (seco)</th><th class="num">% ≤−1,5 dB (25-oct)</th></tr>
+          </thead>
+          <tbody id="worldcover-tbody"></tbody>
+        </table>
+
+        <table class="data-table">
+          <thead>
+            <tr><th>Polarización</th><th class="num">Perímetro</th><th class="num">Control</th><th class="num">Separación</th></tr>
+          </thead>
+          <tbody id="pol-compare-body"></tbody>
+        </table>
+        <p id="hh-double-bounce-note" style="font-size:0.84rem;color:var(--text-muted)"></p>
+      </article>
+
+      <article class="step-card" data-step="7" id="cap-7">
+        <div class="step-num"><span>Capítulo 07 · Riesgo post-incendio</span><span class="step-badge">26 MICROCUENCAS</span></div>
+        <h2>Susceptibilidad de arrastre por microcuenca y activos aguas abajo</h2>
+        <p>
+          El radar <strong>no</strong> detecta químicamente la hidrofobicidad del suelo. Pero al combinar la pérdida de
+          cubierta vegetal (<code>máscara ΔHV</code>), la <strong>pendiente</strong> (Copernicus DEM) y la
+          <strong>sequedad superficial</strong> (NISAR <code>SME2</code>), obtenemos un índice físico de susceptibilidad:
+          <code>riesgo = quemado × (0,6·pendiente + 0,4·sequedad)</code>.
+        </p>
+        <div class="control-box">
+          <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.35rem">Sensibilidad del ranking según severidad mínima exigida:</div>
+          <div class="pill-group">
+            <button class="pill-btn active" type="button" data-basin-field="risk_mean">Umbral −1,5 dB</button>
+            <button class="pill-btn" type="button" data-basin-field="risk_mean_3db">Severidad ≥ −3,0 dB</button>
+            <button class="pill-btn" type="button" data-basin-field="risk_mean_6db">Calcinación ≥ −6,0 dB</button>
+          </div>
+          <div class="basin-card" id="basin-inspector">Haz clic en una cuenca del mapa…</div>
+        </div>
+      </article>
+
+      <article class="step-card" data-step="8" id="cap-8">
+        <div class="step-num"><span>Capítulo 08 · Escenario hídrico</span><span class="step-badge hyp">ESCENARIO HIPOTÉTICO</span></div>
+        <h2>¿Por dónde bajaría el agua desde el perímetro quemado?</h2>
+        <p>
+          Las trazas siguen la dirección de flujo real (D8) calculada sobre el DEM desde 8 puntos del perímetro hacia la
+          red del Limia y el Embalse de Salas. Lo <strong>hipotético</strong> es la intensidad de lluvia: ajusta la barra
+          para estimar el volumen acumulado asumiendo un coeficiente de escorrentía <code>C = 0,6</code> (no medido in situ).
+        </p>
+        <div class="control-box">
+          <label for="rain-slider">
+            <span>Lluvia hipotética en 24h:</span>
+            <strong id="rain-val-label" style="color:var(--cyan);font-family:var(--mono)">60 mm</strong>
+          </label>
+          <input id="rain-slider" type="range" min="0" max="150" step="5" value="60" />
+          <div class="mini-metrics">
+            <div class="mini-metric"><div class="k">Volumen cerca del fuego</div><div class="v" id="rain-v-near">—</div></div>
+            <div class="mini-metric"><div class="k">Volumen en cauce principal</div><div class="v" id="rain-v-main">—</div></div>
+          </div>
+        </div>
+        <div class="callout-warn">
+          <strong>Límite del DEM descargado:</strong> los cauces hacia el oeste se detienen en la línea discontinua de
+          <code>−8,0°</code> de longitud porque ahí termina la teja GLO-30 descargada, no porque el agua se pare ahí.
+        </div>
+      </article>
+
+      <article class="step-card" data-step="9" id="cap-9">
+        <div class="step-num"><span>Capítulo 09 · Escalabilidad y futuro</span><span class="step-badge">VISIÓN IBÉRICA</span></div>
+        <h2>De Calvos de Randín a Quiroga (Ribeira Sacra) y la Constelación Atlántica</h2>
+        <p>
+          El precedente de la <strong>Ribeira Sacra (sept. 2025, 1.805 ha)</strong> demostró que las lluvias de otoño sobre
+          laderas gallegas quemadas arrastran cenizas hacia los ríos Cabe y Sil. El <strong>27 de octubre de 2026</strong>,
+          el Gobierno declaró conjuntamente a <strong>Calvos de Randín y Quiroga</strong> como Zonas Afectadas Gravemente por
+          una Emergencia de Protección Civil. Este pipeline se replica de forma directa cambiando el AOI.
+        </p>
+        <div class="human-tip">
+          <strong>Sinergia de futuro (respuesta a la pregunta 4 del reto):</strong><br/>
+          Combinar <strong>NISAR</strong> (radiografía estructural de alta resolución cada 12 días) con la futura
+          <strong>Constelación Atlántica (PERTE España–Portugal, 16 microsatélites)</strong> aportaría revisitas de ~3 horas
+          y reflectometría GNSS-R en Banda L para humedad rápida, conectada a pluviómetros IoT en las microcuencas críticas.
+        </div>
+      </article>
+
     </div>
-    <div id="legend">
-      <span>Riesgo bajo</span>
-      <div id="legend-gradient"></div>
-      <span>Riesgo alto</span>
+
+    <!-- COLUMNA DERECHA FIJA: MAPA MAPLIBRE + VISOR COMPARE -->
+    <aside class="map-col">
+      <div class="map-frame">
+        <div id="story-map"></div>
+        <div id="compare-wrap">
+          <div id="compare-container" style="position:relative;width:100%;height:100%">
+            <div id="before-map"></div>
+            <div id="after-map"></div>
+          </div>
+        </div>
+        <div class="map-hud">
+          <div class="map-hud-title" id="hud-title">GeoSignal</div>
+          <div class="map-hud-sub" id="hud-sub">Cargando capas…</div>
+        </div>
+        <div class="map-legend">
+          <div class="legend-swatches" id="legend-swatches"></div>
+        </div>
+        <div class="compare-labels" id="compare-labels">
+          <span id="cmp-left-lbl">Óptico Sentinel-2</span>
+          <span id="cmp-right-lbl">NISAR Banda L</span>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- CAPÍTULO 10: METODOLOGÍA, AUDITORÍA QA Y LÍMITES -->
+  <section class="report-footer" id="cap-10">
+    <div class="eyebrow">Capítulo 10 · Transparencia científica</div>
+    <h2>Auditoría de pasadas NISAR, limitaciones y reproducibilidad</h2>
+    <p style="color:var(--text-muted);max-width:80ch">
+      Todos los cálculos se ejecutan en Python offline sobre datos abiertos de NASA/ISRO (NISAR <em>Provisional</em> GCOV y SME2,
+      Track 15 / Frame 23), Copernicus (DEM GLO-30 y EFFIS NRT), ESA WorldCover 2021 y OpenStreetMap.
+    </p>
+
+    <table class="data-table">
+      <thead>
+        <tr><th>Fecha pasada</th><th class="num">Cobertura perímetro</th><th class="num">HV control medio</th><th class="num">Desviación vs mediana</th><th>Estado QA</th></tr>
+      </thead>
+      <tbody id="qa-tbody"></tbody>
+    </table>
+
+    <div class="callout-warn">
+      <strong>Limitaciones explícitas:</strong>
+      (1) El radar no mide hidrofobicidad química ni granulometría del suelo;
+      (2) la lluvia previa a la pasada puede elevar la retrodispersión y enmascarar pérdidas leves de copa;
+      (3) la cobertura ESA WorldCover corresponde a 2021;
+      (4) la simulación de lluvia usa C = 0,6 asumido y se trunca en −8,0° W;
+      (5) las pasadas NISAR son productos en fase <em>Provisional</em>.
     </div>
+
+    <pre>python data/download_timeseries.py
+python data/fetch_context_layers.py
+python data/extract_aoi_stack.py
+python data/build_story_data.py
+python data/validate_story_data.py</pre>
   </section>
 
-  <script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
-  <script>window.mapboxgl = maplibregl;</script>
-  <script src="https://unpkg.com/@mapbox/mapbox-gl-compare@0.4.3/dist/mapbox-gl-compare.js"></script>
-  <script src="app.js"></script>
+  <script src="vendor/maplibre-gl.js"></script>
+  <script src="vendor/maplibre-gl-compare.js"></script>
+  <script type="module" src="story/story.js"></script>
 </body>
 </html>

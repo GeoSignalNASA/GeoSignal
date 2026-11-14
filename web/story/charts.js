@@ -1,0 +1,185 @@
+// Gráficos SVG nativos sin dependencias externas:
+// 1. Serie temporal 10 pasadas (HV perímetro vs control + SME2) con clic interactivo
+// 2. Curva hectáreas quemadas vs umbral (dB) + tasa de falsos positivos en control
+// 3. Histograma ΔHV dentro del perímetro vs zona de control
+// 4. Barras ESA WorldCover 2021 dentro del perímetro
+
+const NS = "http://www.w3.org/2000/svg";
+
+function el(tag, attrs = {}, text = null) {
+  const n = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  if (text !== null) n.textContent = text;
+  return n;
+}
+
+export function renderTimeseriesChart(container, series, selectedDate, onSelectDate) {
+  const W = 540, H = 230;
+  const pad = { l: 46, r: 44, t: 18, b: 38 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  const hvs = series.flatMap((d) => [d.hv_fire_mean, d.hv_ctrl_mean]);
+  const yMin = Math.floor(Math.min(...hvs) - 0.8);
+  const yMax = Math.ceil(Math.max(...hvs) + 0.8);
+
+  const xAt = (i) => pad.l + (i / Math.max(series.length - 1, 1)) * pw;
+  const yAt = (v) => pad.t + ((yMax - v) / (yMax - yMin)) * ph;
+
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Serie temporal NISAR HV y SME2" });
+
+  // Banda vertical del incendio (entre 2026-09-19 y 2026-10-01)
+  const idxPre = series.findIndex((d) => d.date === "2026-09-19");
+  const idxPost = series.findIndex((d) => d.date === "2026-10-01");
+  if (idxPre >= 0 && idxPost >= 0) {
+    const x1 = xAt(idxPre) + (xAt(idxPost) - xAt(idxPre)) * 0.35;
+    const x2 = xAt(idxPre) + (xAt(idxPost) - xAt(idxPre)) * 0.65;
+    svg.appendChild(el("rect", { x: x1, y: pad.t, width: Math.max(4, x2 - x1), height: ph, fill: "rgba(178,24,43,0.28)" }));
+    svg.appendChild(el("text", { x: (x1 + x2) / 2, y: pad.t + 11, "text-anchor": "middle", fill: "#f6c963", "font-size": "8.5", "font-family": "monospace" }, "INCENDIO 24-27 SEP"));
+  }
+
+  // Rejilla horizontal dB
+  for (let yv = yMin; yv <= yMax; yv += 1) {
+    const y = yAt(yv);
+    svg.appendChild(el("line", { x1: pad.l, y1: y, x2: W - pad.r, y2: y, stroke: "#2d2720", "stroke-width": "1" }));
+    svg.appendChild(el("text", { x: pad.l - 6, y: y + 3, "text-anchor": "end", fill: "#9c9284", "font-size": "9", "font-family": "monospace" }, `${yv} dB`));
+  }
+
+  // Barras SME2 secundarias al fondo (humedad 0..0.4 m3/m3)
+  series.forEach((d, i) => {
+    if (d.sme2_fire_mean == null) return;
+    const bh = Math.min(ph * 0.32, (d.sme2_fire_mean / 0.4) * (ph * 0.32));
+    const x = xAt(i) - 6;
+    svg.appendChild(el("rect", { x, y: pad.t + ph - bh, width: 12, height: bh, fill: "rgba(57,232,224,0.22)", rx: 2 }));
+  });
+
+  // Línea control (punteada)
+  const ctrlPath = series.map((d, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${yAt(d.hv_ctrl_mean).toFixed(1)}`).join(" ");
+  svg.appendChild(el("path", { d: ctrlPath, fill: "none", stroke: "#9c9284", "stroke-width": "1.6", "stroke-dasharray": "4 3" }));
+
+  // Línea perímetro EFFIS (naranja)
+  const firePath = series.map((d, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${yAt(d.hv_fire_mean).toFixed(1)}`).join(" ");
+  svg.appendChild(el("path", { d: firePath, fill: "none", stroke: "#e2793c", "stroke-width": "2.4" }));
+
+  // Puntos clicables + etiquetas de fecha
+  series.forEach((d, i) => {
+    const x = xAt(i);
+    const yf = yAt(d.hv_fire_mean);
+    const yc = yAt(d.hv_ctrl_mean);
+    const isSel = d.date === selectedDate;
+
+    svg.appendChild(el("circle", { cx: x, cy: yc, r: 3, fill: "#9c9284" }));
+    const dot = el("circle", {
+      cx: x,
+      cy: yf,
+      r: isSel ? 6.5 : 4.5,
+      fill: d.qa_pass ? (isSel ? "#39e8e0" : "#e2793c") : "#f6c963",
+      stroke: "#15130f",
+      "stroke-width": "1.5",
+      style: "cursor:pointer",
+    });
+    dot.addEventListener("click", () => onSelectDate(d.date));
+    svg.appendChild(dot);
+
+    // Hitbox invisible más grande para accesibilidad táctil
+    const hit = el("circle", { cx: x, cy: yf, r: 14, fill: "transparent", style: "cursor:pointer" });
+    hit.addEventListener("click", () => onSelectDate(d.date));
+    hit.appendChild(el("title", {}, `${d.date} · HV perímetro: ${d.hv_fire_mean} dB · control: ${d.hv_ctrl_mean} dB`));
+    svg.appendChild(hit);
+
+    if (i % 2 === 0 || isSel || d.date === "2026-10-01") {
+      svg.appendChild(
+        el("text", { x, y: H - 10, "text-anchor": "middle", fill: isSel ? "#39e8e0" : "#9c9284", "font-size": "8.5", "font-family": "monospace" }, d.date.slice(5))
+      );
+    }
+  });
+
+  container.innerHTML = "";
+  container.appendChild(svg);
+}
+
+export function renderThresholdCurve(container, curve, currentDb, meta) {
+  const W = 540, H = 220;
+  const pad = { l: 48, r: 44, t: 16, b: 36 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  const yMax = Math.max(meta.effis_ha, ...curve.map((c) => c.ha_raw)) * 1.05;
+  const xMin = -8.0, xMax = -0.5;
+  const xAt = (db) => pad.l + ((db - xMin) / (xMax - xMin)) * pw;
+  const yHa = (ha) => pad.t + (1 - ha / yMax) * ph;
+  const yFp = (fp) => pad.t + (1 - Math.min(fp, 40) / 40) * ph;
+
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Hectáreas quemadas según umbral de dB" });
+
+  // Referencias oficiales Xunta y EFFIS
+  [
+    { ha: meta.official_xunta_ha, label: `Xunta ${meta.official_xunta_ha} ha`, col: "#6db87a" },
+    { ha: meta.effis_ha, label: `EFFIS ${meta.effis_ha} ha`, col: "#39e8e0" },
+  ].forEach((ref) => {
+    const y = yHa(ref.ha);
+    svg.appendChild(el("line", { x1: pad.l, y1: y, x2: W - pad.r, y2: y, stroke: ref.col, "stroke-width": "1", "stroke-dasharray": "4 3", opacity: "0.7" }));
+    svg.appendChild(el("text", { x: pad.l + 4, y: y - 3, fill: ref.col, "font-size": "8.5", "font-family": "monospace" }, ref.label));
+  });
+
+  // Curva 20m raw (punteada)
+  const rawPath = curve.map((c, i) => `${i === 0 ? "M" : "L"}${xAt(c.threshold_db).toFixed(1)},${yHa(c.ha_raw).toFixed(1)}`).join(" ");
+  svg.appendChild(el("path", { d: rawPath, fill: "none", stroke: "#9c9284", "stroke-width": "1.6", "stroke-dasharray": "3 3" }));
+
+  // Curva 100m suavizada (naranja)
+  const smPath = curve.map((c, i) => `${i === 0 ? "M" : "L"}${xAt(c.threshold_db).toFixed(1)},${yHa(c.ha_smooth).toFixed(1)}`).join(" ");
+  svg.appendChild(el("path", { d: smPath, fill: "none", stroke: "#e2793c", "stroke-width": "2.4" }));
+
+  // Curva falsos positivos en control (eje derecho, amarillo)
+  const fpPath = curve.map((c, i) => `${i === 0 ? "M" : "L"}${xAt(c.threshold_db).toFixed(1)},${yFp(c.fp_ctrl_pct_smooth).toFixed(1)}`).join(" ");
+  svg.appendChild(el("path", { d: fpPath, fill: "none", stroke: "#f6c963", "stroke-width": "1.8" }));
+
+  // Marcador del umbral activo
+  const cx = xAt(currentDb);
+  svg.appendChild(el("line", { x1: cx, y1: pad.t, x2: cx, y2: pad.t + ph, stroke: "#ffffff", "stroke-width": "1.4" }));
+
+  [-8, -6, -3, -1.5, -0.5].forEach((db) => {
+    svg.appendChild(el("text", { x: xAt(db), y: H - 10, "text-anchor": "middle", fill: "#9c9284", "font-size": "8.5", "font-family": "monospace" }, `${db}`));
+  });
+  svg.appendChild(el("text", { x: pad.l - 6, y: pad.t + 8, "text-anchor": "end", fill: "#e2793c", "font-size": "8.5", "font-family": "monospace" }, `${Math.round(yMax)} ha`));
+  svg.appendChild(el("text", { x: W - pad.r + 4, y: pad.t + 8, fill: "#f6c963", "font-size": "8.5", "font-family": "monospace" }, "40% FP"));
+
+  container.innerHTML = "";
+  container.appendChild(svg);
+}
+
+export function renderHistogramChart(container, hist) {
+  const W = 540, H = 180;
+  const pad = { l: 38, r: 16, t: 14, b: 32 };
+  const pw = W - pad.l - pad.r;
+  const ph = H - pad.t - pad.b;
+
+  const maxD = Math.max(...hist.flatMap((h) => [h.fire_density, h.ctrl_density]), 0.1);
+  const xMin = -10, xMax = 4;
+  const xAt = (v) => pad.l + ((v - xMin) / (xMax - xMin)) * pw;
+  const yAt = (d) => pad.t + (1 - d / maxD) * ph;
+
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Distribución de ΔHV dentro y fuera del perímetro" });
+
+  // Línea umbral -1.5 dB
+  const tx = xAt(-1.5);
+  svg.appendChild(el("line", { x1: tx, y1: pad.t, x2: tx, y2: pad.t + ph, stroke: "#f6c963", "stroke-dasharray": "4 2", "stroke-width": "1.2" }));
+  svg.appendChild(el("text", { x: tx - 4, y: pad.t + 10, "text-anchor": "end", fill: "#f6c963", "font-size": "8.5", "font-family": "monospace" }, "-1.5 dB"));
+
+  const bw = pw / hist.length - 1;
+  hist.forEach((b) => {
+    const x = xAt(b.bin_center) - bw / 2;
+    const hf = (b.fire_density / maxD) * ph;
+    svg.appendChild(el("rect", { x, y: pad.t + ph - hf, width: bw, height: hf, fill: "rgba(226,121,60,0.62)" }));
+  });
+
+  const ctrlLine = hist.map((b, i) => `${i === 0 ? "M" : "L"}${xAt(b.bin_center).toFixed(1)},${yAt(b.ctrl_density).toFixed(1)}`).join(" ");
+  svg.appendChild(el("path", { d: ctrlLine, fill: "none", stroke: "#39e8e0", "stroke-width": "2" }));
+
+  [-9, -6, -3, -1.5, 0, 3].forEach((v) => {
+    svg.appendChild(el("text", { x: xAt(v), y: H - 10, "text-anchor": "middle", fill: "#9c9284", "font-size": "8.5", "font-family": "monospace" }, `${v}`));
+  });
+
+  container.innerHTML = "";
+  container.appendChild(svg);
+}

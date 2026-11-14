@@ -1,0 +1,1298 @@
+{
+  "meta": {
+    "fire_name": "Calvos de Randín (Ourense, Galicia)",
+    "ignition_date": "2026-09-24",
+    "controlled_date": "2026-09-27",
+    "declaration_date": "2026-10-27",
+    "track_frame": "Track 15 / Frame 23 (ascendente)",
+    "pre_date": "2026-09-19",
+    "post_date": "2026-10-01",
+    "official_xunta_ha": 518,
+    "official_forest_ha": 370,
+    "official_grass_ha": 148,
+    "effis_ha": 1234,
+    "effis_fire_id": 15925129,
+    "valid_coverage_pct": 100.0
+  },
+  "severity_smooth": {
+    "total_valid_ha": 1233.36,
+    "classes": [
+      {
+        "id": 0,
+        "label": "Sin cambio (> -1.5 dB)",
+        "px": 28614,
+        "ha": 1144.56,
+        "pct": 92.8
+      },
+      {
+        "id": 1,
+        "label": "Moderada (-1.5 a -3 dB)",
+        "px": 1654,
+        "ha": 66.16,
+        "pct": 5.4
+      },
+      {
+        "id": 2,
+        "label": "Alta (-3 a -6 dB)",
+        "px": 566,
+        "ha": 22.64,
+        "pct": 1.8
+      },
+      {
+        "id": 3,
+        "label": "Extrema (<= -6 dB)",
+        "px": 0,
+        "ha": 0.0,
+        "pct": 0.0
+      }
+    ],
+    "burned_total_ha": 88.8
+  },
+  "severity_raw_20m": {
+    "total_valid_ha": 1233.36,
+    "classes": [
+      {
+        "id": 0,
+        "label": "Sin cambio (> -1.5 dB)",
+        "px": 24851,
+        "ha": 994.04,
+        "pct": 80.6
+      },
+      {
+        "id": 1,
+        "label": "Moderada (-1.5 a -3 dB)",
+        "px": 3481,
+        "ha": 139.24,
+        "pct": 11.3
+      },
+      {
+        "id": 2,
+        "label": "Alta (-3 a -6 dB)",
+        "px": 2207,
+        "ha": 88.28,
+        "pct": 7.2
+      },
+      {
+        "id": 3,
+        "label": "Extrema (<= -6 dB)",
+        "px": 295,
+        "ha": 11.8,
+        "pct": 1.0
+      }
+    ],
+    "burned_total_ha": 239.32
+  },
+  "severity_robust_baseline": {
+    "total_valid_ha": 1233.36,
+    "classes": [
+      {
+        "id": 0,
+        "label": "Sin cambio (> -1.5 dB)",
+        "px": 28511,
+        "ha": 1140.44,
+        "pct": 92.5
+      },
+      {
+        "id": 1,
+        "label": "Moderada (-1.5 a -3 dB)",
+        "px": 1734,
+        "ha": 69.36,
+        "pct": 5.6
+      },
+      {
+        "id": 2,
+        "label": "Alta (-3 a -6 dB)",
+        "px": 589,
+        "ha": 23.56,
+        "pct": 1.9
+      },
+      {
+        "id": 3,
+        "label": "Extrema (<= -6 dB)",
+        "px": 0,
+        "ha": 0.0,
+        "pct": 0.0
+      }
+    ],
+    "burned_total_ha": 92.92
+  },
+  "severity_oct01_calibrated": {
+    "total_valid_ha": 1233.36,
+    "classes": [
+      {
+        "id": 0,
+        "label": "Sin cambio (> -1.5 dB)",
+        "px": 25310,
+        "ha": 1012.4,
+        "pct": 82.1
+      },
+      {
+        "id": 1,
+        "label": "Moderada (-1.5 a -3 dB)",
+        "px": 3742,
+        "ha": 149.68,
+        "pct": 12.1
+      },
+      {
+        "id": 2,
+        "label": "Alta (-3 a -6 dB)",
+        "px": 1759,
+        "ha": 70.36,
+        "pct": 5.7
+      },
+      {
+        "id": 3,
+        "label": "Extrema (<= -6 dB)",
+        "px": 23,
+        "ha": 0.92,
+        "pct": 0.1
+      }
+    ],
+    "burned_total_ha": 220.96
+  },
+  "severity_oct25": {
+    "total_valid_ha": 1233.36,
+    "classes": [
+      {
+        "id": 0,
+        "label": "Sin cambio (> -1.5 dB)",
+        "px": 21493,
+        "ha": 859.72,
+        "pct": 69.7
+      },
+      {
+        "id": 1,
+        "label": "Moderada (-1.5 a -3 dB)",
+        "px": 4022,
+        "ha": 160.88,
+        "pct": 13.0
+      },
+      {
+        "id": 2,
+        "label": "Alta (-3 a -6 dB)",
+        "px": 5101,
+        "ha": 204.04,
+        "pct": 16.5
+      },
+      {
+        "id": 3,
+        "label": "Extrema (<= -6 dB)",
+        "px": 218,
+        "ha": 8.72,
+        "pct": 0.7
+      }
+    ],
+    "burned_total_ha": 373.64
+  },
+  "threshold_curve": [
+    {
+      "threshold_db": -0.5,
+      "ha_smooth": 186.52,
+      "fp_ctrl_pct_smooth": 0.61,
+      "ha_raw": 393.32,
+      "fp_ctrl_pct_raw": 21.72
+    },
+    {
+      "threshold_db": -0.75,
+      "ha_smooth": 155.88,
+      "fp_ctrl_pct_smooth": 0.18,
+      "ha_raw": 348.6,
+      "fp_ctrl_pct_raw": 18.52
+    },
+    {
+      "threshold_db": -1.0,
+      "ha_smooth": 130.04,
+      "fp_ctrl_pct_smooth": 0.05,
+      "ha_raw": 309.0,
+      "fp_ctrl_pct_raw": 15.6
+    },
+    {
+      "threshold_db": -1.25,
+      "ha_smooth": 107.24,
+      "fp_ctrl_pct_smooth": 0.02,
+      "ha_raw": 271.72,
+      "fp_ctrl_pct_raw": 13.01
+    },
+    {
+      "threshold_db": -1.5,
+      "ha_smooth": 88.8,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 239.32,
+      "fp_ctrl_pct_raw": 10.71
+    },
+    {
+      "threshold_db": -1.75,
+      "ha_smooth": 72.96,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 210.92,
+      "fp_ctrl_pct_raw": 8.75
+    },
+    {
+      "threshold_db": -2.0,
+      "ha_smooth": 60.0,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 182.08,
+      "fp_ctrl_pct_raw": 7.05
+    },
+    {
+      "threshold_db": -2.25,
+      "ha_smooth": 49.12,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 158.44,
+      "fp_ctrl_pct_raw": 5.64
+    },
+    {
+      "threshold_db": -2.5,
+      "ha_smooth": 38.4,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 136.28,
+      "fp_ctrl_pct_raw": 4.47
+    },
+    {
+      "threshold_db": -2.75,
+      "ha_smooth": 30.36,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 116.12,
+      "fp_ctrl_pct_raw": 3.49
+    },
+    {
+      "threshold_db": -3.0,
+      "ha_smooth": 22.64,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 100.08,
+      "fp_ctrl_pct_raw": 2.71
+    },
+    {
+      "threshold_db": -3.25,
+      "ha_smooth": 17.36,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 86.0,
+      "fp_ctrl_pct_raw": 2.08
+    },
+    {
+      "threshold_db": -3.5,
+      "ha_smooth": 12.2,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 73.64,
+      "fp_ctrl_pct_raw": 1.57
+    },
+    {
+      "threshold_db": -3.75,
+      "ha_smooth": 7.72,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 62.48,
+      "fp_ctrl_pct_raw": 1.18
+    },
+    {
+      "threshold_db": -4.0,
+      "ha_smooth": 4.96,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 53.12,
+      "fp_ctrl_pct_raw": 0.88
+    },
+    {
+      "threshold_db": -4.25,
+      "ha_smooth": 3.0,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 44.52,
+      "fp_ctrl_pct_raw": 0.66
+    },
+    {
+      "threshold_db": -4.5,
+      "ha_smooth": 1.56,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 37.12,
+      "fp_ctrl_pct_raw": 0.48
+    },
+    {
+      "threshold_db": -4.75,
+      "ha_smooth": 1.04,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 31.44,
+      "fp_ctrl_pct_raw": 0.35
+    },
+    {
+      "threshold_db": -5.0,
+      "ha_smooth": 0.52,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 26.24,
+      "fp_ctrl_pct_raw": 0.25
+    },
+    {
+      "threshold_db": -5.25,
+      "ha_smooth": 0.16,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 21.32,
+      "fp_ctrl_pct_raw": 0.19
+    },
+    {
+      "threshold_db": -5.5,
+      "ha_smooth": 0.08,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 17.32,
+      "fp_ctrl_pct_raw": 0.14
+    },
+    {
+      "threshold_db": -5.75,
+      "ha_smooth": 0.0,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 14.4,
+      "fp_ctrl_pct_raw": 0.1
+    },
+    {
+      "threshold_db": -6.0,
+      "ha_smooth": 0.0,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 11.8,
+      "fp_ctrl_pct_raw": 0.07
+    },
+    {
+      "threshold_db": -6.25,
+      "ha_smooth": 0.0,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 9.96,
+      "fp_ctrl_pct_raw": 0.05
+    },
+    {
+      "threshold_db": -6.5,
+      "ha_smooth": 0.0,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 8.24,
+      "fp_ctrl_pct_raw": 0.03
+    },
+    {
+      "threshold_db": -6.75,
+      "ha_smooth": 0.0,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 6.8,
+      "fp_ctrl_pct_raw": 0.02
+    },
+    {
+      "threshold_db": -7.0,
+      "ha_smooth": 0.0,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 5.48,
+      "fp_ctrl_pct_raw": 0.02
+    },
+    {
+      "threshold_db": -7.25,
+      "ha_smooth": 0.0,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 4.28,
+      "fp_ctrl_pct_raw": 0.01
+    },
+    {
+      "threshold_db": -7.5,
+      "ha_smooth": 0.0,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 3.24,
+      "fp_ctrl_pct_raw": 0.01
+    },
+    {
+      "threshold_db": -7.75,
+      "ha_smooth": 0.0,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 2.64,
+      "fp_ctrl_pct_raw": 0.01
+    },
+    {
+      "threshold_db": -8.0,
+      "ha_smooth": 0.0,
+      "fp_ctrl_pct_smooth": 0.0,
+      "ha_raw": 2.04,
+      "fp_ctrl_pct_raw": 0.0
+    }
+  ],
+  "histogram": [
+    {
+      "bin_center": -9.75,
+      "fire_density": 0.0,
+      "ctrl_density": 0.0
+    },
+    {
+      "bin_center": -9.25,
+      "fire_density": 0.0,
+      "ctrl_density": 0.0
+    },
+    {
+      "bin_center": -8.75,
+      "fire_density": 0.0,
+      "ctrl_density": 0.0
+    },
+    {
+      "bin_center": -8.25,
+      "fire_density": 0.0,
+      "ctrl_density": 0.0
+    },
+    {
+      "bin_center": -7.75,
+      "fire_density": 0.0,
+      "ctrl_density": 0.0
+    },
+    {
+      "bin_center": -7.25,
+      "fire_density": 0.0,
+      "ctrl_density": 0.0
+    },
+    {
+      "bin_center": -6.75,
+      "fire_density": 0.0,
+      "ctrl_density": 0.0
+    },
+    {
+      "bin_center": -6.25,
+      "fire_density": 0.0,
+      "ctrl_density": 0.0
+    },
+    {
+      "bin_center": -5.75,
+      "fire_density": 0.0001,
+      "ctrl_density": 0.0
+    },
+    {
+      "bin_center": -5.25,
+      "fire_density": 0.0007,
+      "ctrl_density": 0.0
+    },
+    {
+      "bin_center": -4.75,
+      "fire_density": 0.0017,
+      "ctrl_density": 0.0
+    },
+    {
+      "bin_center": -4.25,
+      "fire_density": 0.0055,
+      "ctrl_density": 0.0
+    },
+    {
+      "bin_center": -3.75,
+      "fire_density": 0.0118,
+      "ctrl_density": 0.0
+    },
+    {
+      "bin_center": -3.25,
+      "fire_density": 0.0169,
+      "ctrl_density": 0.0
+    },
+    {
+      "bin_center": -2.75,
+      "fire_density": 0.0256,
+      "ctrl_density": 0.0
+    },
+    {
+      "bin_center": -2.25,
+      "fire_density": 0.0351,
+      "ctrl_density": 0.0
+    },
+    {
+      "bin_center": -1.75,
+      "fire_density": 0.0468,
+      "ctrl_density": 0.0001
+    },
+    {
+      "bin_center": -1.25,
+      "fire_density": 0.0669,
+      "ctrl_density": 0.0009
+    },
+    {
+      "bin_center": -0.75,
+      "fire_density": 0.0917,
+      "ctrl_density": 0.0112
+    },
+    {
+      "bin_center": -0.25,
+      "fire_density": 0.1569,
+      "ctrl_density": 0.0814
+    },
+    {
+      "bin_center": 0.25,
+      "fire_density": 0.3081,
+      "ctrl_density": 0.2817
+    },
+    {
+      "bin_center": 0.75,
+      "fire_density": 0.4482,
+      "ctrl_density": 0.4864
+    },
+    {
+      "bin_center": 1.25,
+      "fire_density": 0.3926,
+      "ctrl_density": 0.4965
+    },
+    {
+      "bin_center": 1.75,
+      "fire_density": 0.2266,
+      "ctrl_density": 0.3423
+    },
+    {
+      "bin_center": 2.25,
+      "fire_density": 0.1051,
+      "ctrl_density": 0.1802
+    },
+    {
+      "bin_center": 2.75,
+      "fire_density": 0.0426,
+      "ctrl_density": 0.0755
+    },
+    {
+      "bin_center": 3.25,
+      "fire_density": 0.0137,
+      "ctrl_density": 0.0309
+    },
+    {
+      "bin_center": 3.75,
+      "fire_density": 0.0035,
+      "ctrl_density": 0.0131
+    }
+  ],
+  "polarizations": {
+    "hv_fire_mean_db": 0.581,
+    "hv_fire_net_db": -0.637,
+    "hv_fire_p10_db": -1.068,
+    "hv_ctrl_mean_db": 1.217,
+    "hh_fire_mean_db": 1.225,
+    "hh_fire_net_db": -0.199,
+    "hh_fire_p90_db": 2.542,
+    "hh_ctrl_mean_db": 1.424,
+    "hv_separation_db": 0.637,
+    "hh_separation_db": 0.199,
+    "hh_double_bounce_pct_fire": 59.78,
+    "ctrl_offset_oct01_db": 1.217,
+    "ctrl_offset_oct25_db": -0.091,
+    "hv_oct25_fire_mean_db": -1.188,
+    "hv_oct25_ctrl_mean_db": -0.091
+  },
+  "timeseries": [
+    {
+      "date": "2026-06-27",
+      "qa_pass": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_deviation_db": 0.537,
+      "hv_fire_mean": -12.652,
+      "hv_ctrl_mean": -13.875,
+      "hh_fire_mean": -7.744,
+      "hh_ctrl_mean": -8.551,
+      "sme2_fire_mean": 0.296,
+      "sme2_ctrl_mean": 0.293
+    },
+    {
+      "date": "2026-07-09",
+      "qa_pass": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_deviation_db": 0.002,
+      "hv_fire_mean": -12.777,
+      "hv_ctrl_mean": -14.414,
+      "hh_fire_mean": -7.846,
+      "hh_ctrl_mean": -9.202,
+      "sme2_fire_mean": 0.295,
+      "sme2_ctrl_mean": 0.28
+    },
+    {
+      "date": "2026-07-21",
+      "qa_pass": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_deviation_db": 0.002,
+      "hv_fire_mean": -12.777,
+      "hv_ctrl_mean": -14.409,
+      "hh_fire_mean": -7.887,
+      "hh_ctrl_mean": -9.25,
+      "sme2_fire_mean": 0.194,
+      "sme2_ctrl_mean": 0.188
+    },
+    {
+      "date": "2026-08-14",
+      "qa_pass": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_deviation_db": 0.12,
+      "hv_fire_mean": -12.893,
+      "hv_ctrl_mean": -14.531,
+      "hh_fire_mean": -7.581,
+      "hh_ctrl_mean": -8.962,
+      "sme2_fire_mean": 0.192,
+      "sme2_ctrl_mean": 0.191
+    },
+    {
+      "date": "2026-08-26",
+      "qa_pass": false,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_deviation_db": 1.345,
+      "hv_fire_mean": -11.543,
+      "hv_ctrl_mean": -13.066,
+      "hh_fire_mean": -5.84,
+      "hh_ctrl_mean": -6.945,
+      "sme2_fire_mean": 0.241,
+      "sme2_ctrl_mean": 0.246
+    },
+    {
+      "date": "2026-09-07",
+      "qa_pass": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_deviation_db": 0.019,
+      "hv_fire_mean": -12.861,
+      "hv_ctrl_mean": -14.431,
+      "hh_fire_mean": -7.188,
+      "hh_ctrl_mean": -8.483,
+      "sme2_fire_mean": 0.189,
+      "sme2_ctrl_mean": 0.19
+    },
+    {
+      "date": "2026-09-19",
+      "qa_pass": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_deviation_db": 0.152,
+      "hv_fire_mean": -12.938,
+      "hv_ctrl_mean": -14.563,
+      "hh_fire_mean": -7.313,
+      "hh_ctrl_mean": -8.644,
+      "sme2_fire_mean": 0.182,
+      "sme2_ctrl_mean": 0.181
+    },
+    {
+      "date": "2026-10-01",
+      "qa_pass": false,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_deviation_db": 1.066,
+      "hv_fire_mean": -12.357,
+      "hv_ctrl_mean": -13.346,
+      "hh_fire_mean": -6.088,
+      "hh_ctrl_mean": -7.221,
+      "sme2_fire_mean": 0.226,
+      "sme2_ctrl_mean": 0.23
+    },
+    {
+      "date": "2026-10-13",
+      "qa_pass": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_deviation_db": 0.136,
+      "hv_fire_mean": -13.562,
+      "hv_ctrl_mean": -14.276,
+      "hh_fire_mean": -7.339,
+      "hh_ctrl_mean": -8.198,
+      "sme2_fire_mean": 0.19,
+      "sme2_ctrl_mean": 0.195
+    },
+    {
+      "date": "2026-10-25",
+      "qa_pass": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_deviation_db": 0.242,
+      "hv_fire_mean": -14.126,
+      "hv_ctrl_mean": -14.654,
+      "hh_fire_mean": -8.206,
+      "hh_ctrl_mean": -8.877,
+      "sme2_fire_mean": null,
+      "sme2_ctrl_mean": null
+    }
+  ],
+  "landcover_2021": [
+    {
+      "code": 10,
+      "name": "Arbolado",
+      "area_ha": 576.28,
+      "pct_of_perimeter": 46.7,
+      "dhv_mean_db": 0.819,
+      "dhv_net_oct01_db": -0.399,
+      "dhv_oct25_mean_db": -0.615,
+      "burned_ha_15db": 6.04,
+      "burned_pct_15db": 1.0,
+      "burned_pct_oct25_15db": 16.0
+    },
+    {
+      "code": 20,
+      "name": "Matorral",
+      "area_ha": 51.16,
+      "pct_of_perimeter": 4.1,
+      "dhv_mean_db": 0.452,
+      "dhv_net_oct01_db": -0.765,
+      "dhv_oct25_mean_db": -1.329,
+      "burned_ha_15db": 6.8,
+      "burned_pct_15db": 13.3,
+      "burned_pct_oct25_15db": 31.9
+    },
+    {
+      "code": 30,
+      "name": "Pasto / herbáceo",
+      "area_ha": 599.8,
+      "pct_of_perimeter": 48.6,
+      "dhv_mean_db": 0.364,
+      "dhv_net_oct01_db": -0.853,
+      "dhv_oct25_mean_db": -1.734,
+      "burned_ha_15db": 75.96,
+      "burned_pct_15db": 12.7,
+      "burned_pct_oct25_15db": 44.2
+    },
+    {
+      "code": 50,
+      "name": "Urbano",
+      "area_ha": 5.72,
+      "pct_of_perimeter": 0.5,
+      "dhv_mean_db": 0.386,
+      "dhv_net_oct01_db": -0.831,
+      "dhv_oct25_mean_db": -0.508,
+      "burned_ha_15db": 0.0,
+      "burned_pct_15db": 0.0,
+      "burned_pct_oct25_15db": 0.0
+    }
+  ],
+  "basins_summary": [
+    {
+      "basin_id": 9,
+      "rank": 1,
+      "risk_mean": 0.009578,
+      "risk_mean_3db": 0.002483,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 1.66,
+      "burned_ha": 74.0,
+      "area_ha": 4455.1,
+      "slope_mean_deg": 11.2,
+      "moisture_mean": 0.227,
+      "overlaps_fire": true
+    },
+    {
+      "basin_id": 8,
+      "rank": 2,
+      "risk_mean": 0.005133,
+      "risk_mean_3db": 0.001411,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.82,
+      "burned_ha": 14.8,
+      "area_ha": 1807.1,
+      "slope_mean_deg": 6.5,
+      "moisture_mean": 0.223,
+      "overlaps_fire": true
+    },
+    {
+      "basin_id": 14,
+      "rank": 3,
+      "risk_mean": 0.000232,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.04,
+      "burned_ha": 0.36,
+      "area_ha": 807.6,
+      "slope_mean_deg": 12.1,
+      "moisture_mean": 0.23,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 3,
+      "rank": 4,
+      "risk_mean": 0.000159,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.05,
+      "burned_ha": 1.56,
+      "area_ha": 3069.4,
+      "slope_mean_deg": 9.5,
+      "moisture_mean": 0.219,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 20,
+      "rank": 5,
+      "risk_mean": 9.1e-05,
+      "risk_mean_3db": 1e-05,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.03,
+      "burned_ha": 0.8,
+      "area_ha": 2821.2,
+      "slope_mean_deg": 9.2,
+      "moisture_mean": 0.227,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 4,
+      "rank": 6,
+      "risk_mean": 6.8e-05,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.01,
+      "burned_ha": 0.28,
+      "area_ha": 2009.9,
+      "slope_mean_deg": 6.4,
+      "moisture_mean": 0.234,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 10,
+      "rank": 7,
+      "risk_mean": 4.5e-05,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.02,
+      "burned_ha": 0.08,
+      "area_ha": 498.3,
+      "slope_mean_deg": 5.0,
+      "moisture_mean": 0.235,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 2,
+      "rank": 8,
+      "risk_mean": 3.5e-05,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.01,
+      "burned_ha": 0.2,
+      "area_ha": 1350.8,
+      "slope_mean_deg": 8.4,
+      "moisture_mean": 0.221,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 6,
+      "rank": 9,
+      "risk_mean": 2.2e-05,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.01,
+      "burned_ha": 0.08,
+      "area_ha": 1433.2,
+      "slope_mean_deg": 8.7,
+      "moisture_mean": 0.24,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 7,
+      "rank": 10,
+      "risk_mean": 2e-05,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.0,
+      "burned_ha": 0.08,
+      "area_ha": 1723.3,
+      "slope_mean_deg": 9.1,
+      "moisture_mean": 0.225,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 15,
+      "rank": 11,
+      "risk_mean": 1.9e-05,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.0,
+      "burned_ha": 0.04,
+      "area_ha": 1237.6,
+      "slope_mean_deg": 10.8,
+      "moisture_mean": 0.219,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 22,
+      "rank": 12,
+      "risk_mean": 1.7e-05,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.0,
+      "burned_ha": 0.04,
+      "area_ha": 1227.5,
+      "slope_mean_deg": 12.6,
+      "moisture_mean": 0.228,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 18,
+      "rank": 13,
+      "risk_mean": 6e-06,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.0,
+      "burned_ha": 0.04,
+      "area_ha": 1498.2,
+      "slope_mean_deg": 12.9,
+      "moisture_mean": 0.228,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 1,
+      "rank": 14,
+      "risk_mean": 0.0,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.0,
+      "burned_ha": 0.0,
+      "area_ha": 1454.5,
+      "slope_mean_deg": 9.7,
+      "moisture_mean": 0.241,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 5,
+      "rank": 14,
+      "risk_mean": 0.0,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.0,
+      "burned_ha": 0.0,
+      "area_ha": 1039.0,
+      "slope_mean_deg": 11.4,
+      "moisture_mean": 0.229,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 12,
+      "rank": 14,
+      "risk_mean": 0.0,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.01,
+      "burned_ha": 0.04,
+      "area_ha": 364.9,
+      "slope_mean_deg": 6.6,
+      "moisture_mean": 0.244,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 13,
+      "rank": 14,
+      "risk_mean": 0.0,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.0,
+      "burned_ha": 0.0,
+      "area_ha": 401.3,
+      "slope_mean_deg": 5.4,
+      "moisture_mean": 0.231,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 11,
+      "rank": 14,
+      "risk_mean": 0.0,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.0,
+      "burned_ha": 0.0,
+      "area_ha": 2102.9,
+      "slope_mean_deg": 10.9,
+      "moisture_mean": 0.248,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 17,
+      "rank": 14,
+      "risk_mean": 0.0,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.0,
+      "burned_ha": 0.0,
+      "area_ha": 711.0,
+      "slope_mean_deg": 13.3,
+      "moisture_mean": 0.236,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 16,
+      "rank": 14,
+      "risk_mean": 0.0,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.0,
+      "burned_ha": 0.0,
+      "area_ha": 636.7,
+      "slope_mean_deg": 6.3,
+      "moisture_mean": 0.234,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 19,
+      "rank": 14,
+      "risk_mean": 0.0,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.0,
+      "burned_ha": 0.0,
+      "area_ha": 753.8,
+      "slope_mean_deg": 11.6,
+      "moisture_mean": 0.236,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 21,
+      "rank": 14,
+      "risk_mean": 0.0,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.0,
+      "burned_ha": 0.0,
+      "area_ha": 1781.0,
+      "slope_mean_deg": 8.9,
+      "moisture_mean": 0.231,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 23,
+      "rank": 14,
+      "risk_mean": 0.0,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.0,
+      "burned_ha": 0.0,
+      "area_ha": 739.7,
+      "slope_mean_deg": 12.9,
+      "moisture_mean": 0.221,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 24,
+      "rank": 14,
+      "risk_mean": 0.0,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.0,
+      "burned_ha": 0.0,
+      "area_ha": 747.2,
+      "slope_mean_deg": 12.7,
+      "moisture_mean": 0.235,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 25,
+      "rank": 14,
+      "risk_mean": 0.0,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.0,
+      "burned_ha": 0.0,
+      "area_ha": 1272.8,
+      "slope_mean_deg": 13.0,
+      "moisture_mean": 0.224,
+      "overlaps_fire": false
+    },
+    {
+      "basin_id": 26,
+      "rank": 14,
+      "risk_mean": 0.0,
+      "risk_mean_3db": 0.0,
+      "risk_mean_6db": 0.0,
+      "burned_pct": 0.0,
+      "burned_ha": 0.0,
+      "area_ha": 1714.5,
+      "slope_mean_deg": 9.1,
+      "moisture_mean": 0.223,
+      "overlaps_fire": false
+    }
+  ],
+  "assets_by_basin": {
+    "18": [
+      {
+        "name": "Randín",
+        "type": "village"
+      }
+    ],
+    "9": [
+      {
+        "name": "Calvos de Randín",
+        "type": "town"
+      },
+      {
+        "name": "As Meaus",
+        "type": "hamlet"
+      },
+      {
+        "name": "Rubiás",
+        "type": "hamlet"
+      },
+      {
+        "name": "Santiago de Rubiás",
+        "type": "hamlet"
+      }
+    ],
+    "4": [
+      {
+        "name": "Vila",
+        "type": "hamlet"
+      },
+      {
+        "name": "Golpellás",
+        "type": "hamlet"
+      }
+    ],
+    "2": [
+      {
+        "name": "Castelaus",
+        "type": "hamlet"
+      },
+      {
+        "name": "Lobás",
+        "type": "hamlet"
+      }
+    ],
+    "8": [
+      {
+        "name": "Feás",
+        "type": "hamlet"
+      }
+    ],
+    "16": [
+      {
+        "name": "Guntumil",
+        "type": "hamlet"
+      }
+    ],
+    "14": [
+      {
+        "name": "Requiás",
+        "type": "hamlet"
+      }
+    ],
+    "10": [
+      {
+        "name": "Maus de Salas",
+        "type": "hamlet"
+      }
+    ],
+    "11": [
+      {
+        "name": "Muíños",
+        "type": "village"
+      }
+    ],
+    "19": [
+      {
+        "name": "Tourém (PT)",
+        "type": "village"
+      }
+    ],
+    "12": [
+      {
+        "name": "Embalse de Salas",
+        "type": "reservoir"
+      }
+    ]
+  },
+  "qa": [
+    {
+      "date": "2026-06-27",
+      "gcov_file": "NISAR_L2_PR_GCOV_024_015_A_023_2005_DHDH_A_20260627T053253_20260627T053327_P05023_N_F_J_001.h5",
+      "sme2_file": "NISAR_L3_PR_SME2_024_015_A_023_2005_DHDH_A_20260627T053253_20260627T053327_P05023_N_F_J_001.h5",
+      "epsg": 32629,
+      "grid_aligned": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_hv_mean_db": -13.875,
+      "ctrl_hv_std_db": 3.17,
+      "ctrl_hh_mean_db": -8.551,
+      "ctrl_deviation_db": 0.537,
+      "qa_pass": true
+    },
+    {
+      "date": "2026-07-09",
+      "gcov_file": "NISAR_L2_PR_GCOV_025_015_A_023_2005_DHDH_A_20260709T053252_20260709T053327_P05023_N_F_J_001.h5",
+      "sme2_file": "NISAR_L3_PR_SME2_025_015_A_023_2005_DHDH_A_20260709T053252_20260709T053327_P05023_N_F_J_001.h5",
+      "epsg": 32629,
+      "grid_aligned": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_hv_mean_db": -14.414,
+      "ctrl_hv_std_db": 3.274,
+      "ctrl_hh_mean_db": -9.202,
+      "ctrl_deviation_db": 0.002,
+      "qa_pass": true
+    },
+    {
+      "date": "2026-07-21",
+      "gcov_file": "NISAR_L2_PR_GCOV_026_015_A_023_2005_DHDH_A_20260721T053251_20260721T053326_P05023_N_F_J_001.h5",
+      "sme2_file": "NISAR_L3_PR_SME2_026_015_A_023_2005_DHDH_A_20260721T053251_20260721T053326_P05023_N_F_J_001.h5",
+      "epsg": 32629,
+      "grid_aligned": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_hv_mean_db": -14.409,
+      "ctrl_hv_std_db": 3.256,
+      "ctrl_hh_mean_db": -9.25,
+      "ctrl_deviation_db": 0.002,
+      "qa_pass": true
+    },
+    {
+      "date": "2026-08-14",
+      "gcov_file": "NISAR_L2_PR_GCOV_028_015_A_023_2005_DHDH_A_20260814T053250_20260814T053325_P05023_N_F_J_001.h5",
+      "sme2_file": "NISAR_L3_PR_SME2_028_015_A_023_2005_DHDH_A_20260814T053250_20260814T053325_P05023_N_F_J_001.h5",
+      "epsg": 32629,
+      "grid_aligned": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_hv_mean_db": -14.531,
+      "ctrl_hv_std_db": 3.281,
+      "ctrl_hh_mean_db": -8.962,
+      "ctrl_deviation_db": 0.12,
+      "qa_pass": true
+    },
+    {
+      "date": "2026-08-26",
+      "gcov_file": "NISAR_L2_PR_GCOV_029_015_A_023_2005_DHDH_A_20260826T053250_20260826T053325_P05023_N_F_J_001.h5",
+      "sme2_file": "NISAR_L3_PR_SME2_029_015_A_023_2005_DHDH_A_20260826T053250_20260826T053325_P05023_N_F_J_001.h5",
+      "epsg": 32629,
+      "grid_aligned": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_hv_mean_db": -13.066,
+      "ctrl_hv_std_db": 3.037,
+      "ctrl_hh_mean_db": -6.945,
+      "ctrl_deviation_db": 1.345,
+      "qa_pass": false
+    },
+    {
+      "date": "2026-09-07",
+      "gcov_file": "NISAR_L2_PR_GCOV_030_015_A_023_2005_DHDH_A_20260907T053250_20260907T053325_P05023_N_F_J_001.h5",
+      "sme2_file": "NISAR_L3_PR_SME2_030_015_A_023_2005_DHDH_A_20260907T053250_20260907T053325_P05023_N_F_J_001.h5",
+      "epsg": 32629,
+      "grid_aligned": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_hv_mean_db": -14.431,
+      "ctrl_hv_std_db": 3.329,
+      "ctrl_hh_mean_db": -8.483,
+      "ctrl_deviation_db": 0.019,
+      "qa_pass": true
+    },
+    {
+      "date": "2026-09-19",
+      "gcov_file": "NISAR_L2_PR_GCOV_031_015_A_023_2005_DHDH_A_20260919T053250_20260919T053325_P05023_F_F_J_001.h5",
+      "sme2_file": "NISAR_L3_PR_SME2_031_015_A_023_2005_DHDH_A_20260919T053250_20260919T053325_P05023_F_F_J_001.h5",
+      "epsg": 32629,
+      "grid_aligned": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_hv_mean_db": -14.563,
+      "ctrl_hv_std_db": 3.339,
+      "ctrl_hh_mean_db": -8.644,
+      "ctrl_deviation_db": 0.152,
+      "qa_pass": true
+    },
+    {
+      "date": "2026-10-01",
+      "gcov_file": "NISAR_L2_PR_GCOV_032_015_A_023_2005_DHDH_A_20261001T053250_20261001T053325_P05023_N_F_J_001.h5",
+      "sme2_file": "NISAR_L3_PR_SME2_032_015_A_023_2005_DHDH_A_20261001T053250_20261001T053325_P05023_N_F_J_001.h5",
+      "epsg": 32629,
+      "grid_aligned": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_hv_mean_db": -13.346,
+      "ctrl_hv_std_db": 3.033,
+      "ctrl_hh_mean_db": -7.221,
+      "ctrl_deviation_db": 1.066,
+      "qa_pass": false
+    },
+    {
+      "date": "2026-10-13",
+      "gcov_file": "NISAR_L2_PR_GCOV_033_015_A_023_2005_DHDH_A_20261013T053250_20261013T053325_P05023_N_F_J_001.h5",
+      "sme2_file": "NISAR_L3_PR_SME2_033_015_A_023_2005_DHDH_A_20261013T053250_20261013T053325_P05023_N_F_J_001.h5",
+      "epsg": 32629,
+      "grid_aligned": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_hv_mean_db": -14.276,
+      "ctrl_hv_std_db": 3.325,
+      "ctrl_hh_mean_db": -8.198,
+      "ctrl_deviation_db": 0.136,
+      "qa_pass": true
+    },
+    {
+      "date": "2026-10-25",
+      "gcov_file": "NISAR_L2_PR_GCOV_034_015_A_023_2005_DHDH_A_20261025T053250_20261025T053325_P05036_N_F_J_001.h5",
+      "sme2_file": null,
+      "epsg": 32629,
+      "grid_aligned": true,
+      "valid_pct_perimeter": 100.0,
+      "ctrl_hv_mean_db": -14.654,
+      "ctrl_hv_std_db": 3.287,
+      "ctrl_hh_mean_db": -8.877,
+      "ctrl_deviation_db": 0.242,
+      "qa_pass": true
+    }
+  ],
+  "ctrl_hv_median_db": -14.412
+}

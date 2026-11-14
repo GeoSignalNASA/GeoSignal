@@ -1,0 +1,25 @@
+{
+"type": "FeatureCollection",
+"name": "assets",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "name": "Randín", "type": "village", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.8747653, 41.9055536 ] } },
+{ "type": "Feature", "properties": { "name": "Calvos de Randín", "type": "town", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.8590985, 41.9250298 ] } },
+{ "type": "Feature", "properties": { "name": "As Meaus", "type": "hamlet", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.821409, 41.9270267 ] } },
+{ "type": "Feature", "properties": { "name": "Baltar", "type": "village", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.7505172, 41.9358295 ] } },
+{ "type": "Feature", "properties": { "name": "Vila", "type": "hamlet", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.8667946, 41.990666 ] } },
+{ "type": "Feature", "properties": { "name": "Rubiás", "type": "hamlet", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.8321537, 41.9079768 ] } },
+{ "type": "Feature", "properties": { "name": "Castelaus", "type": "hamlet", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.8392039, 41.9955518 ] } },
+{ "type": "Feature", "properties": { "name": "Santiago de Rubiás", "type": "hamlet", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.8178413, 41.9088983 ] } },
+{ "type": "Feature", "properties": { "name": "Golpellás", "type": "hamlet", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.8860411, 41.9809301 ] } },
+{ "type": "Feature", "properties": { "name": "Lobás", "type": "hamlet", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.8434037, 41.9781985 ] } },
+{ "type": "Feature", "properties": { "name": "Feás", "type": "hamlet", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.8425723, 41.9472765 ] } },
+{ "type": "Feature", "properties": { "name": "Guntumil", "type": "hamlet", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.9224702, 41.9094771 ] } },
+{ "type": "Feature", "properties": { "name": "Requiás", "type": "hamlet", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.9329587, 41.907245 ] } },
+{ "type": "Feature", "properties": { "name": "Maus de Salas", "type": "hamlet", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.923997, 41.9363395 ] } },
+{ "type": "Feature", "properties": { "name": "Muíños", "type": "village", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.9800073, 41.9368705 ] } },
+{ "type": "Feature", "properties": { "name": "Tourém (PT)", "type": "village", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.897496, 41.9067664 ] } },
+{ "type": "Feature", "properties": { "name": "Embalse de Salas", "type": "reservoir", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.9336645, 41.9198647 ] } },
+{ "type": "Feature", "properties": { "name": "Embalse das Conchas", "type": "reservoir", "population": null, "source": "OSM Nominatim" }, "geometry": { "type": "Point", "coordinates": [ -7.9837685, 41.9685145 ] } }
+]
+}
