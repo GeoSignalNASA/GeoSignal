@@ -734,6 +734,16 @@
       "burned_pct_oct25_15db": 0.0
     }
   ],
+  "optical_dnbr": {
+    "pre_scene": "2026-09-20",
+    "post_scene": "2026-10-15",
+    "valid_pct": 100.0,
+    "burned_low_plus_ha": 540.48,
+    "burned_mod_high_ha": 483.12,
+    "burned_high_ha": 409.48,
+    "pearson_r_vs_dhv_oct25": -0.773,
+    "pearson_r_vs_dhv_oct01": -0.489
+  },
   "basins_summary": [
     {
       "basin_id": 9,
@@ -1081,11 +1091,17 @@
         "type": "village"
       }
     ],
-    "9": [
+    "8": [
       {
-        "name": "Calvos de Randín",
-        "type": "town"
+        "name": "Calvos",
+        "type": "village"
       },
+      {
+        "name": "Feás",
+        "type": "hamlet"
+      }
+    ],
+    "9": [
       {
         "name": "As Meaus",
         "type": "hamlet"
@@ -1116,12 +1132,6 @@
       },
       {
         "name": "Lobás",
-        "type": "hamlet"
-      }
-    ],
-    "8": [
-      {
-        "name": "Feás",
         "type": "hamlet"
       }
     ],

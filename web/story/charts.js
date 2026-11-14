@@ -45,12 +45,21 @@ export function renderTimeseriesChart(container, series, selectedDate, onSelectD
     svg.appendChild(el("text", { x: pad.l - 6, y: y + 3, "text-anchor": "end", fill: "#9c9284", "font-size": "9", "font-family": "monospace" }, `${yv} dB`));
   }
 
-  // Barras SME2 secundarias al fondo (humedad 0..0.4 m3/m3)
+  // Barras SME2 secundarias al fondo (humedad 0..0.35 m3/m3) + eje Y derecho
+  const smeMax = 0.35;
+  const smeZoneH = ph * 0.34;
+  [0.0, 0.15, 0.3].forEach((sv) => {
+    const sy = pad.t + ph - (sv / smeMax) * smeZoneH;
+    svg.appendChild(el("line", { x1: W - pad.r, y1: sy, x2: W - pad.r + 3, y2: sy, stroke: "#39e8e0", "stroke-width": "1", opacity: "0.7" }));
+    svg.appendChild(el("text", { x: W - pad.r + 6, y: sy + 3, "text-anchor": "start", fill: "#39e8e0", "font-size": "8.5", "font-family": "monospace", opacity: "0.85" }, sv.toFixed(2)));
+  });
+  svg.appendChild(el("text", { x: W - pad.r + 6, y: pad.t + ph - smeZoneH - 7, "text-anchor": "start", fill: "#39e8e0", "font-size": "7.5", "font-family": "monospace", opacity: "0.75" }, "m³/m³"));
+
   series.forEach((d, i) => {
     if (d.sme2_fire_mean == null) return;
-    const bh = Math.min(ph * 0.32, (d.sme2_fire_mean / 0.4) * (ph * 0.32));
+    const bh = Math.min(smeZoneH, (d.sme2_fire_mean / smeMax) * smeZoneH);
     const x = xAt(i) - 6;
-    svg.appendChild(el("rect", { x, y: pad.t + ph - bh, width: 12, height: bh, fill: "rgba(57,232,224,0.22)", rx: 2 }));
+    svg.appendChild(el("rect", { x, y: pad.t + ph - bh, width: 12, height: bh, fill: "rgba(57,232,224,0.24)", rx: 2 }));
   });
 
   // Línea control (punteada)
@@ -84,14 +93,12 @@ export function renderTimeseriesChart(container, series, selectedDate, onSelectD
     // Hitbox invisible más grande para accesibilidad táctil
     const hit = el("circle", { cx: x, cy: yf, r: 14, fill: "transparent", style: "cursor:pointer" });
     hit.addEventListener("click", () => onSelectDate(d.date));
-    hit.appendChild(el("title", {}, `${d.date} · HV perímetro: ${d.hv_fire_mean} dB · control: ${d.hv_ctrl_mean} dB`));
+    hit.appendChild(el("title", {}, `${d.date} · HV perímetro: ${d.hv_fire_mean} dB · control: ${d.hv_ctrl_mean} dB · SME2: ${d.sme2_fire_mean ?? "—"} m³/m³`));
     svg.appendChild(hit);
 
-    if (i % 2 === 0 || isSel || d.date === "2026-10-01") {
-      svg.appendChild(
-        el("text", { x, y: H - 10, "text-anchor": "middle", fill: isSel ? "#39e8e0" : "#9c9284", "font-size": "8.5", "font-family": "monospace" }, d.date.slice(5))
-      );
-    }
+    svg.appendChild(
+      el("text", { x, y: H - 10, "text-anchor": "middle", fill: isSel ? "#39e8e0" : "#9c9284", "font-size": "8", "font-family": "monospace", "font-weight": isSel ? "700" : "400" }, d.date.slice(5))
+    );
   });
 
   container.innerHTML = "";

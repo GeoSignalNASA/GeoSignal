@@ -157,19 +157,22 @@
         <h2>Óptico ciego por humo y nubes frente a radar nítido</h2>
         <p>
           El <strong>25 de septiembre</strong> (incendio activo), Sentinel-2 registra la columna de humo tapando el monte;
-          el <strong>28 de septiembre</strong>, el 89 % de la escena está cubierta por nubes justo cuando los equipos necesitan evaluar daños.
+          el <strong>30 de septiembre</strong>, el 91 % de la escena está cubierta por nubes justo cuando los equipos necesitan evaluar daños (y el 15-oct ya despeja para validar la cicatriz óptica dNBR).
           NISAR Banda L obtiene una radiografía limpia en su pasada del <strong>1 de octubre</strong>.
         </p>
         <div class="control-box">
           <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.35rem">Panel izquierdo (óptico Sentinel-2 real):</div>
           <div class="pill-group">
             <button class="pill-btn active" type="button" data-opt-key="optical_fire.jpg">25-sep (humo activo)</button>
-            <button class="pill-btn" type="button" data-opt-key="optical_clouds.jpg">28-sep (89% nubes)</button>
+            <button class="pill-btn" type="button" data-opt-key="optical_clouds.jpg">30-sep (91% nubes)</button>
+            <button class="pill-btn" type="button" data-opt-key="optical_post.jpg">15-oct (cicatriz despejada)</button>
           </div>
-          <div style="font-size:0.78rem;color:var(--text-muted);margin:0.5rem 0 0.35rem">Panel derecho (NISAR Banda L):</div>
+          <div style="font-size:0.78rem;color:var(--text-muted);margin:0.5rem 0 0.35rem">Panel derecho (NISAR Banda L / validación dNBR):</div>
           <div class="pill-group">
-            <button class="pill-btn active" type="button" data-rad-key="dhv_classes.png">Severidad ΔHV (clases dB)</button>
+            <button class="pill-btn active" type="button" data-rad-key="dhv_classes.png">Severidad ΔHV (01-oct)</button>
+            <button class="pill-btn" type="button" data-rad-key="dhv_oct25.png">Severidad ΔHV (25-oct seco)</button>
             <button class="pill-btn" type="button" data-rad-key="hv_post.png">HV post (01-oct)</button>
+            <button class="pill-btn" type="button" data-rad-key="dnbr_s2.png">Sentinel-2 dNBR (20-sep→15-oct)</button>
           </div>
         </div>
       </article>
@@ -257,6 +260,7 @@
           <tbody id="pol-compare-body"></tbody>
         </table>
         <p id="hh-double-bounce-note" style="font-size:0.84rem;color:var(--text-muted)"></p>
+        <div class="human-tip" id="dnbr-validation-note" style="margin-top:0.65rem;font-size:0.82rem"></div>
       </article>
 
       <article class="step-card" data-step="7" id="cap-7">
@@ -294,8 +298,8 @@
           </label>
           <input id="rain-slider" type="range" min="0" max="150" step="5" value="60" />
           <div class="mini-metrics">
-            <div class="mini-metric"><div class="k">Volumen cerca del fuego</div><div class="v" id="rain-v-near">—</div></div>
-            <div class="mini-metric"><div class="k">Volumen en cauce principal</div><div class="v" id="rain-v-main">—</div></div>
+            <div class="mini-metric"><div class="k">Escorrentía desde quemado (25-oct)</div><div class="v" id="rain-v-near">—</div></div>
+            <div class="mini-metric"><div class="k">Caudal acumulado cuenca (Salas/Limia)</div><div class="v" id="rain-v-main">—</div></div>
           </div>
         </div>
         <div class="callout-warn">

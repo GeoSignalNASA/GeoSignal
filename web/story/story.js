@@ -60,6 +60,14 @@ function fmtEs(n, digits = 0) {
   return Number(n).toLocaleString("es-ES", { maximumFractionDigits: digits, minimumFractionDigits: digits });
 }
 
+function getBlockCenter() {
+  const coords = OVERLAYS?.["hv_pre.png"]?.coordinates;
+  if (!coords || coords.length < 4) return [-7.88, 41.91];
+  const lng = (coords[0][0] + coords[1][0]) / 2;
+  const lat = (coords[0][1] + coords[2][1]) / 2;
+  return [lng, lat];
+}
+
 function flyToCamera(center, zoom) {
   if (!map) return;
   const opts = { center, zoom, essential: true };
@@ -161,7 +169,7 @@ function showCompareMode(show) {
 function initCompareMaps() {
   if (compareInit) return;
   compareInit = true;
-  const center = [-7.84, 41.925];
+  const center = getBlockCenter();
 
   beforeMap = new maplibregl.Map({ container: "before-map", style: darkBaseStyle(), center, zoom: 11.4, attributionControl: false });
   afterMap = new maplibregl.Map({ container: "after-map", style: darkBaseStyle(), center, zoom: 11.4, attributionControl: false });
@@ -198,7 +206,7 @@ function updateCompareLayers(optKey, radKey) {
   if (oSrc && OVERLAYS[optKey]) oSrc.updateImage({ url: OVERLAYS[optKey].url, coordinates: OVERLAYS[optKey].coordinates });
   if (rSrc && OVERLAYS[radKey]) rSrc.updateImage({ url: OVERLAYS[radKey].url, coordinates: OVERLAYS[radKey].coordinates });
   document.getElementById("cmp-left-lbl").textContent = OVERLAYS[optKey]?.label || optKey;
-  document.getElementById("cmp-right-lbl").textContent = radKey === "dhv_classes.png" ? "NISAR Banda L · Clases ΔHV" : "NISAR Banda L · HV post (01-oct)";
+  document.getElementById("cmp-right-lbl").textContent = OVERLAYS[radKey]?.label || radKey;
 }
 
 function parseNumberArray(raw) {
@@ -211,14 +219,17 @@ function parseNumberArray(raw) {
 
 function buildRainSegmentsGeoJson(rainGeoJson) {
   const features = [];
+  const stride = 4;
   for (const feat of rainGeoJson.features) {
     const coords = feat.geometry.coordinates;
     const areas = parseNumberArray(feat.properties.contrib_area_m2);
-    for (let i = 0; i < coords.length - 1; i++) {
+    for (let i = 0; i < coords.length - 1; i += stride) {
+      const next = Math.min(i + stride, coords.length - 1);
+      const segArea = Math.max(areas[i] || 0, areas[next] || 0);
       features.push({
         type: "Feature",
-        geometry: { type: "LineString", coordinates: [coords[i], coords[i + 1]] },
-        properties: { seed_id: feat.properties.seed_id, area_m2: areas[i] || 0 },
+        geometry: { type: "LineString", coordinates: [coords[i], coords[next]] },
+        properties: { seed_id: feat.properties.seed_id, area_m2: segArea },
       });
     }
   }
@@ -229,35 +240,37 @@ function updateRainMapLayer(rainMm) {
   activeRainMm = rainMm;
   document.getElementById("rain-val-label").textContent = `${rainMm} mm`;
 
+  const maxArea = Math.max(...RAIN_SEGS_GJ.features.map((f) => f.properties.area_m2), 1);
   if (map && map.getLayer("rain-lines")) {
     const k = (rainMm / 1000) * RUNOFF_COEFF;
-    const maxArea = Math.max(...RAIN_SEGS_GJ.features.map((f) => f.properties.area_m2), 1);
-    const refMaxV = Math.max(maxArea * (150 / 1000) * RUNOFF_COEFF, 1);
+    // Referencia a 100 mm con C=0.6 (0.06 m efectivos) para resaltar troncos principales ya a 60 mm
+    const refFlow = maxArea * 0.06;
 
     map.setPaintProperty("rain-lines", "line-width", [
       "interpolate",
       ["linear"],
       ["*", ["get", "area_m2"], k],
-      0, 1.0,
-      1000, 2.4,
-      100000, 4.8,
-      refMaxV, 9.0,
+      0, 1.1,
+      refFlow * 0.05, 2.0,
+      refFlow * 0.60, 4.2,
+      refFlow * 1.40, 5.6,
     ]);
     map.setPaintProperty("rain-lines", "line-color", [
       "interpolate",
       ["linear"],
       ["*", ["get", "area_m2"], k],
       0, "#3a6ea5",
-      refMaxV * 0.2, "#39e8e0",
-      refMaxV * 0.85, "#e2793c",
+      refFlow * 0.02, "#39e8e0",
+      refFlow * 0.30, "#f6c963",
+      refFlow * 0.60, "#e2793c",
+      refFlow * 1.25, "#c2432e",
     ]);
   }
 
-  const nearArea = RAIN_SEGS_GJ.features[0]?.properties.area_m2 || 0;
-  const maxArea = Math.max(...RAIN_SEGS_GJ.features.map((f) => f.properties.area_m2), 0);
-  const vNear = nearArea * (rainMm / 1000) * RUNOFF_COEFF;
+  const burnedHa = STATS?.severity_oct25?.burned_total_ha || STATS?.severity_smooth?.burned_total_ha || 0;
+  const vBurned = burnedHa * 10000 * (rainMm / 1000) * RUNOFF_COEFF;
   const vMain = maxArea * (rainMm / 1000) * RUNOFF_COEFF;
-  document.getElementById("rain-v-near").textContent = `${fmtEs(vNear)} m³`;
+  document.getElementById("rain-v-near").textContent = `${fmtEs(vBurned)} m³`;
   document.getElementById("rain-v-main").textContent = `${fmtEs(vMain)} m³`;
 }
 
@@ -280,11 +293,16 @@ function selectBasinById(basinId) {
   const feat = BASINS_GJ.features.find((f) => Number(f.properties.basin_id) === Number(basinId));
   if (!feat) return;
   const p = feat.properties;
+  const rawAssets = p.downstream_assets;
   let assets = [];
-  try {
-    assets = JSON.parse(p.downstream_assets || "[]");
-  } catch {
-    assets = [];
+  if (Array.isArray(rawAssets)) {
+    assets = rawAssets;
+  } else if (typeof rawAssets === "string") {
+    try {
+      assets = JSON.parse(rawAssets || "[]");
+    } catch {
+      assets = [];
+    }
   }
 
   const assetsHtml = assets.length
@@ -347,7 +365,7 @@ function activateStep(stepId) {
       ]);
       break;
     case "2":
-      flyToCamera([-7.84, 41.925], 11.8);
+      flyToCamera(getBlockCenter(), 11.5);
       updateRasterOverlay("hv_pre.png");
       updateHud("Capítulo 2 · Cómo ve el radar", "NISAR Banda L HV pre-incendio (19-sep): el bosque denso devuelve señal brillante (dispersión volumétrica).", [
         { color: "#d4d4d4", label: "HV alto (dosel 3D)" },
@@ -355,7 +373,7 @@ function activateStep(stepId) {
       ]);
       break;
     case "3":
-      flyToCamera([-7.84, 41.925], 11.6);
+      flyToCamera(getBlockCenter(), 11.5);
       updateRasterOverlay(`ts/${activeSeriesDate}`);
       updateHud(`Capítulo 3 · Serie Jul–Oct (${activeSeriesDate})`, "Haz clic en cualquier fecha del gráfico para inspeccionar esa pasada NISAR.", [
         { color: "#e2793c", label: "Media HV perímetro" },
@@ -369,7 +387,7 @@ function activateStep(stepId) {
       ]);
       break;
     case "5":
-      flyToCamera([-7.838, 41.926], 12.1);
+      flyToCamera(getBlockCenter(), 11.6);
       applyDhbMode(activeDhbMode);
       updateHud("Capítulo 5 · Niveles de dB (ΔHV)", "Mueve el umbral de dB o alterna entre 01-oct bruto, calibrado y 25-oct seco.", [
         { color: "#f6c963", label: "Moderada (-1,5 a -3 dB)" },
@@ -378,7 +396,7 @@ function activateStep(stepId) {
       ]);
       break;
     case "6":
-      flyToCamera([-7.838, 41.926], 11.9);
+      flyToCamera(getBlockCenter(), 11.6);
       updateRasterOverlay("dhh.png");
       updateHud("Capítulo 6 · Polarizaciones HH vs HV", "Mapa ΔHH (azul = caída, dorado = aumento por doble rebote en troncos/humedad).", [
         { color: "#38bdf8", label: "Caída HH" },
@@ -510,6 +528,16 @@ function populateExecutiveSummary() {
     )
     .join("");
 
+  const dnbr = STATS.optical_dnbr;
+  const dnbrEl = document.getElementById("dnbr-validation-note");
+  if (dnbr && dnbrEl) {
+    dnbrEl.innerHTML =
+      `<strong>Validación cruzada óptica (Sentinel-2 dNBR, ${dnbr.pre_scene} → ${dnbr.post_scene}):</strong> ` +
+      `<strong>${fmtEs(dnbr.burned_low_plus_ha, 1)} ha</strong> con dNBR ≥ 0,10 (<strong>${fmtEs(dnbr.burned_high_ha, 1)} ha</strong> severidad alta ≥ 0,44), ` +
+      `coincidiendo en orden de magnitud con las 518 ha oficiales y las <strong>${fmtEs(oct25?.burned_total_ha || 0, 1)} ha</strong> NISAR seco del 25-oct ` +
+      `(correlación píxel a píxel <code>r = ${dnbr.pearson_r_vs_dhv_oct25}</code> entre dNBR y ΔHV_oct25).`;
+  }
+
   // Tabla QA en metodología
   document.getElementById("qa-tbody").innerHTML = STATS.qa
     .map(
@@ -627,13 +655,14 @@ async function init() {
     map.addLayer({ id: "fire-fill", type: "fill", source: "fire-perim", layout: { visibility: "none" }, paint: { "fill-color": "#e2793c", "fill-opacity": 0.16 } });
     map.addLayer({ id: "fire-line", type: "line", source: "fire-perim", paint: { "line-color": "#39e8e0", "line-width": 2.2 } });
 
-    // Marcadores HTML ligeros para núcleos/embalses OSM (funcionan sin PBF glyphs remotos)
+    // Marcadores HTML en píldoras compactas para núcleos/embalses OSM
     assetMarkers = ASSETS_GJ.features.map((f) => {
       const el = document.createElement("div");
-      el.style.cssText = "display:flex;align-items:center;gap:4px;font:600 11px ui-monospace,monospace;color:#ede6da;text-shadow:0 1px 3px #000;pointer-events:none;";
+      el.style.cssText =
+        "display:inline-flex;align-items:center;gap:4px;padding:1px 6px;border-radius:999px;background:rgba(21,19,15,0.86);border:1px solid rgba(255,255,255,0.14);font:600 10px ui-monospace,monospace;color:#f3ede2;white-space:nowrap;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,0.65);";
       const dotCol = f.properties.type === "reservoir" ? "#39e8e0" : "#f6c963";
-      el.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${dotCol};border:1px solid #15130f"></span><span>${f.properties.name}</span>`;
-      return new maplibregl.Marker({ element: el, anchor: "left" }).setLngLat(f.geometry.coordinates).addTo(map);
+      el.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:${dotCol};flex-shrink:0"></span><span>${f.properties.name}</span>`;
+      return new maplibregl.Marker({ element: el, anchor: "bottom", offset: [0, -4] }).setLngLat(f.geometry.coordinates).addTo(map);
     });
 
     map.on("click", "basins-fill", (e) => {

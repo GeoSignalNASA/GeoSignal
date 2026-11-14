@@ -34,10 +34,12 @@ WORLDCOVER_OUT = os.path.join(OUT_DIR, "worldcover_aoi.tif")
 S2_SEARCH_URL = "https://earth-search.aws.element84.com/v1/search"
 S2_SCENES = [
     ("S2C_29TNG_20260925_0_L2A", "optical_fire.jpg", "Sentinel-2 L2A 2026-09-25 (incendio activo)"),
-    ("S2C_29TNG_20260928_0_L2A", "optical_clouds.jpg", "Sentinel-2 L2A 2026-09-28 (89% nubes)"),
+    ("S2B_29TNG_20260930_0_L2A", "optical_clouds.jpg", "Sentinel-2 L2A 2026-09-30 (91% nubes)"),
+    ("S2C_29TNG_20261015_0_L2A", "optical_post.jpg", "Sentinel-2 L2A 2026-10-15 (cicatriz post-fuego)"),
 ]
 OVERLAYS_DIR = os.path.join("web", "assets", "data", "overlays")
 OPTICAL_META = os.path.join(OUT_DIR, "optical_meta.json")
+DNBR_OUT = os.path.join(OUT_DIR, "s2_dnbr.tif")
 
 # BBox ampliado para cubrir todas las microcuencas (incluye Randín, Calvos, As Meaus, Baltar, Salas)
 EXTENDED_BBOX = {
@@ -49,8 +51,8 @@ EXTENDED_BBOX = {
 
 
 NOMINATIM_TARGETS = [
-    ("Randín, Ourense", "Randín", "village"),
-    ("Calvos de Randín", "Calvos de Randín", "town"),
+    ("Randín, Calvos de Randín, Ourense", "Randín", "village"),
+    ("Calvos, Calvos de Randín, Ourense", "Calvos", "village"),
     ("As Meaus, Baltar", "As Meaus", "hamlet"),
     ("Baltar, Ourense", "Baltar", "village"),
     ("Vila, Calvos de Randín", "Vila", "hamlet"),
@@ -190,6 +192,24 @@ def fetch_worldcover_aoi():
     print(f"wrote {WORLDCOVER_OUT} ({data.shape[1]}x{data.shape[0]} px)")
 
 
+def get_target_wgs_bounds():
+    """Usa exactamente los límites del cubo NISAR (aoi_manifest.json) si existe."""
+    manifest_path = os.path.join(OUT_DIR, "aoi_manifest.json")
+    if os.path.exists(manifest_path):
+        with open(manifest_path, encoding="utf-8") as f:
+            m = json.load(f)
+        tf = rasterio.Affine(*m["transform"])
+        h, w = m["shape"]
+        b_utm = (tf.c, tf.f + tf.e * h, tf.c + tf.a * w, tf.f)
+        return transform_bounds(m["crs"], "EPSG:4326", *b_utm)
+    return (
+        AOI_BBOX["min_lon"] - 0.015,
+        AOI_BBOX["min_lat"] - 0.015,
+        AOI_BBOX["max_lon"] + 0.015,
+        AOI_BBOX["max_lat"] + 0.015,
+    )
+
+
 def fetch_sentinel2_overlays():
     os.makedirs(OVERLAYS_DIR, exist_ok=True)
     os.makedirs(OUT_DIR, exist_ok=True)
@@ -203,9 +223,7 @@ def fetch_sentinel2_overlays():
     resp.raise_for_status()
     features = {f["id"]: f for f in resp.json().get("features", [])}
 
-    # Usamos un AOI algo holgado en EPSG:3857 para el visor óptico vs radar
-    min_lon, min_lat = AOI_BBOX["min_lon"] - 0.01, AOI_BBOX["min_lat"] - 0.01
-    max_lon, max_lat = AOI_BBOX["max_lon"] + 0.01, AOI_BBOX["max_lat"] + 0.01
+    min_lon, min_lat, max_lon, max_lat = get_target_wgs_bounds()
     merc_bounds = transform_bounds("EPSG:4326", "EPSG:3857", min_lon, min_lat, max_lon, max_lat)
 
     meta = {}
@@ -226,7 +244,7 @@ def fetch_sentinel2_overlays():
                 src_rgb = src.read([1, 2, 3], window=win)
                 src_tf = src.window_transform(win)
 
-                out_w = 960
+                out_w = 800
                 out_h = round(out_w * (merc_bounds[3] - merc_bounds[1]) / (merc_bounds[2] - merc_bounds[0]))
                 dst_tf = rasterio.transform.from_bounds(*merc_bounds, out_w, out_h)
                 dst_rgb = np.zeros((3, out_h, out_w), dtype=np.uint8)
@@ -243,7 +261,7 @@ def fetch_sentinel2_overlays():
 
         img = Image.fromarray(np.transpose(dst_rgb, (1, 2, 0)), mode="RGB")
         out_path = os.path.join(OVERLAYS_DIR, out_name)
-        img.save(out_path, format="JPEG", quality=86, optimize=True)
+        img.save(out_path, format="JPEG", quality=82, optimize=True)
         wgs_bounds = transform_bounds("EPSG:3857", "EPSG:4326", *merc_bounds)
         corners = [
             [wgs_bounds[0], wgs_bounds[3]],
@@ -266,7 +284,70 @@ def fetch_sentinel2_overlays():
     print(f"wrote {OPTICAL_META}")
 
 
+def compute_sentinel2_dnbr():
+    """Calcula dNBR real (20-sep -> 15-oct) alineado a la rejilla exacta de aoi_manifest.json."""
+    manifest_path = os.path.join(OUT_DIR, "aoi_manifest.json")
+    if not os.path.exists(manifest_path):
+        print("skip dNBR: falta data/out/aoi_manifest.json")
+        return
+    with open(manifest_path, encoding="utf-8") as f:
+        m = json.load(f)
+    aoi_tf = rasterio.Affine(*m["transform"])
+    h, w = m["shape"]
+    min_lon, min_lat, max_lon, max_lat = get_target_wgs_bounds()
+
+    resp = requests.post(
+        S2_SEARCH_URL,
+        json={"collections": ["sentinel-2-l2a"], "ids": ["S2B_29TNG_20260920_0_L2A", "S2C_29TNG_20261015_0_L2A"]},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    feats = {f["id"]: f for f in resp.json().get("features", [])}
+
+    def read_nbr(feat):
+        bands = {}
+        with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", AWS_NO_SIGN_REQUEST="YES"):
+            for key, asset in (("b8", "nir08"), ("b12", "swir22"), ("scl", "scl")):
+                href = feat["assets"][asset]["href"]
+                with rasterio.open(f"/vsicurl/{href}") as src:
+                    ub = transform_bounds("EPSG:4326", src.crs, min_lon - 0.01, min_lat - 0.01, max_lon + 0.01, max_lat + 0.01)
+                    win = rasterio.windows.from_bounds(*ub, transform=src.transform).round_offsets().round_lengths()
+                    src_arr = src.read(1, window=win)
+                    dst = np.zeros((h, w), dtype=np.float32)
+                    reproject(
+                        src_arr,
+                        dst,
+                        src_transform=src.window_transform(win),
+                        src_crs=src.crs,
+                        dst_transform=aoi_tf,
+                        dst_crs=m["crs"],
+                        resampling=Resampling.nearest if key == "scl" else Resampling.bilinear,
+                    )
+                    bands[key] = dst
+        scl = np.round(bands["scl"]).astype(int)
+        valid = (bands["b8"] > 0) & (bands["b12"] > 0) & (~np.isin(scl, [0, 1, 3, 8, 9, 10]))
+        return np.where(valid, (bands["b8"] - bands["b12"]) / (bands["b8"] + bands["b12"] + 1e-6), np.nan).astype(np.float32)
+
+    dnbr = (read_nbr(feats["S2B_29TNG_20260920_0_L2A"]) - read_nbr(feats["S2C_29TNG_20261015_0_L2A"])).astype(np.float32)
+    with rasterio.open(
+        DNBR_OUT,
+        "w",
+        driver="GTiff",
+        height=h,
+        width=w,
+        count=1,
+        dtype="float32",
+        crs=m["crs"],
+        transform=aoi_tf,
+        nodata=np.nan,
+        compress="lzw",
+    ) as dst:
+        dst.write(dnbr, 1)
+    print(f"wrote {DNBR_OUT} ({w}x{h} px)")
+
+
 if __name__ == "__main__":
     fetch_osm_assets()
     fetch_worldcover_aoi()
     fetch_sentinel2_overlays()
+    compute_sentinel2_dnbr()

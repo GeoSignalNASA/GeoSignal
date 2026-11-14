@@ -76,11 +76,31 @@ def save_rgba(rgba, path, colors=64):
     img.save(path, format="PNG", optimize=True)
 
 
-def render_hv_grayscale(arr, vmin=-22.0, vmax=-4.0):
+def render_hv_grayscale(arr, vmin=-20.0, vmax=-5.0):
+    h, w = arr.shape
     norm = np.nan_to_num(np.clip((arr - vmin) / (vmax - vmin), 0.0, 1.0), nan=0.0)
     gray = np.round(norm * 255.0).astype(np.uint8)
-    alpha = np.where(np.isfinite(arr), 235, 0).astype(np.uint8)
+    # Suavizado de bordes (24 px) para fundir suavemente con el mapa base
+    pad = max(8, min(h, w) // 16)
+    wy = np.minimum(np.arange(h), h - 1 - np.arange(h)) / float(pad)
+    wx = np.minimum(np.arange(w), w - 1 - np.arange(w)) / float(pad)
+    feather = np.clip(np.minimum(wy[:, None], wx[None, :]), 0.0, 1.0)
+    alpha = np.where(np.isfinite(arr), np.round(220.0 * feather), 0).astype(np.uint8)
     rgba = np.stack([gray, gray, gray, alpha], axis=-1)
+    return rgba
+
+
+def render_dnbr_classes(dnbr):
+    # Clases USGS dNBR: >=0.10 baja, >=0.27 mod-alta, >=0.44 alta
+    h, w = dnbr.shape
+    rgba = np.zeros((h, w, 4), dtype=np.uint8)
+    valid = np.isfinite(dnbr)
+    c1 = valid & (dnbr >= 0.10) & (dnbr < 0.27)
+    c2 = valid & (dnbr >= 0.27) & (dnbr < 0.44)
+    c3 = valid & (dnbr >= 0.44)
+    rgba[c1] = [57, 232, 224, 175]
+    rgba[c2] = [246, 201, 99, 210]
+    rgba[c3] = [226, 121, 60, 235]
     return rgba
 
 
@@ -404,6 +424,25 @@ def main():
         ("dhv_cont.png", dhv, render_dhv_continuous, 680),
         ("dhh.png", dhh, render_dhh_diverging, 540),
     ]
+    dnbr_stats = None
+    dnbr_path = os.path.join(OUT_DIR, "s2_dnbr.tif")
+    if os.path.exists(dnbr_path):
+        with rasterio.open(dnbr_path) as dsrc:
+            dnbr_arr = dsrc.read(1)
+        val_dnbr = fire_mask & np.isfinite(dnbr_arr) & np.isfinite(dhv_oct25)
+        dnbr_vals = dnbr_arr[val_dnbr]
+        dnbr_stats = {
+            "pre_scene": "2026-09-20",
+            "post_scene": "2026-10-15",
+            "valid_pct": round(float(val_dnbr.sum() / fire_mask.sum()) * 100.0, 1),
+            "burned_low_plus_ha": round(float((dnbr_vals >= 0.10).sum()) * px_ha, 2),
+            "burned_mod_high_ha": round(float((dnbr_vals >= 0.27).sum()) * px_ha, 2),
+            "burned_high_ha": round(float((dnbr_vals >= 0.44).sum()) * px_ha, 2),
+            "pearson_r_vs_dhv_oct25": round(float(np.corrcoef(dnbr_vals, dhv_oct25[val_dnbr])[0, 1]), 3),
+            "pearson_r_vs_dhv_oct01": round(float(np.corrcoef(dnbr_vals, dhv[val_dnbr])[0, 1]), 3),
+        }
+        layers_to_export.append(("dnbr_s2.png", dnbr_arr, render_dnbr_classes, 680))
+
     for fname, arr, renderer, out_w in layers_to_export:
         merc_arr, corners = reproject_to_3857(arr, aoi_tf, src_crs, out_w=out_w)
         rgba = renderer(merc_arr)
@@ -481,6 +520,7 @@ def main():
         "polarizations": pol_stats,
         "timeseries": timeseries,
         "landcover_2021": landcover,
+        "optical_dnbr": dnbr_stats,
         "basins_summary": basins_summary,
         "assets_by_basin": {str(k): v for k, v in assets_by_basin.items()},
         "qa": manifest["qa"],
