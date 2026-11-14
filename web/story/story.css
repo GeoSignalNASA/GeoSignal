@@ -25,6 +25,12 @@ html {
   scroll-behavior: smooth;
 }
 
+
+.step-card,
+.report-footer {
+  scroll-margin-top: calc(var(--nav-h) + 1rem);
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

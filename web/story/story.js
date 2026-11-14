@@ -336,10 +336,6 @@ function activateStep(stepId) {
   document.querySelectorAll(".step-card").forEach((c) => {
     c.classList.toggle("is-active", c.dataset.step === activeStep);
   });
-  document.querySelectorAll(".toc-pill").forEach((p) => {
-    p.classList.toggle("active", p.dataset.step === activeStep);
-  });
-
   showCompareMode(activeStep === "4");
 
   if (!map) return;
@@ -571,6 +567,49 @@ function updateThresholdReadout(db) {
   }
 }
 
+// --- Scroll-spy del header (independiente del observer del mapa) ---
+// Vigila TODAS las secciones enlazadas desde el índice (incluidas Resumen y
+// Límites, que no son step-cards) usando una línea horizontal al 45 % del
+// viewport: funciona igual con secciones más altas que la pantalla.
+let activeChapter = -1;
+
+function setActiveChapter(idx) {
+  if (idx === activeChapter) return;
+  activeChapter = idx;
+  document.querySelectorAll(".toc-pill").forEach((link, i) => {
+    const isActive = i === idx;
+    link.classList.toggle("active", isActive);
+    if (isActive) link.setAttribute("aria-current", "location");
+    else link.removeAttribute("aria-current");
+  });
+}
+
+function initChapterSpy() {
+  const links = [...document.querySelectorAll(".toc-pill")];
+  const sections = links.map((a) => document.querySelector(a.getAttribute("href")));
+
+  const spy = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) setActiveChapter(sections.indexOf(entry.target));
+      }
+    },
+    { threshold: 0, rootMargin: "-45% 0px -54% 0px" }
+  );
+  sections.forEach((s) => s && spy.observe(s));
+
+  // La última sección puede ser demasiado corta para cruzar la línea del 45 %:
+  // al llegar al final de la página se marca explícitamente.
+  window.addEventListener("scroll", () => {
+    const doc = document.documentElement;
+    if (doc.scrollTop + doc.clientHeight >= doc.scrollHeight - 4) {
+      setActiveChapter(sections.length - 1);
+    }
+  }, { passive: true });
+
+  setActiveChapter(0);
+}
+
 function applyLanguage(lang) {
   activeLang = lang;
   const dict = I18N[lang];
@@ -742,6 +781,7 @@ async function init() {
     { threshold: 0.45, rootMargin: "-15% 0px -35% 0px" }
   );
   document.querySelectorAll(".step-card[data-step]").forEach((el) => observer.observe(el));
+  initChapterSpy();
 
   window.addEventListener("scroll", () => {
     const doc = document.documentElement;
