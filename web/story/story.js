@@ -567,20 +567,170 @@ function updateThresholdReadout(db) {
   }
 }
 
-// --- Scroll-spy del header (independiente del observer del mapa) ---
-// Vigila TODAS las secciones enlazadas desde el índice (incluidas Resumen y
-// Límites, que no son step-cards) usando una línea horizontal al 45 % del
-// viewport: funciona igual con secciones más altas que la pantalla.
+// --- Header scroll-spy (independent from the map step observer) ---
+// Watches EVERY section linked from the chapter menu (including Resumen and
+// Límites, which are not step-cards) through a horizontal line at 45% of the
+// viewport, so sections taller than the screen are handled too.
 let activeChapter = -1;
 
+// "3. Serie Jul–Oct" -> { num: "3", name: "Serie Jul–Oct" }; unnumbered -> num null
+function parseChapterLabel(text) {
+  const m = text.trim().match(/^(\d+)\.\s*(.*)$/);
+  return m ? { num: m[1], name: m[2] } : { num: null, name: text.trim() };
+}
+
+function renderChapterIndicator(idx, direction = 0) {
+  const links = [...document.querySelectorAll(".toc-pill")];
+  if (!links[idx]) return;
+  const total = links.filter((a) => parseChapterLabel(a.textContent).num !== null).length;
+  const { num, name } = parseChapterLabel(links[idx].textContent);
+
+  const count = document.getElementById("chapter-count");
+  const pad = (n) => String(n).padStart(2, "0");
+  count.textContent = num ? `${pad(num)} / ${pad(total)}` : "";
+  count.hidden = !num;
+
+  const viewport = document.getElementById("chapter-label-viewport");
+  const current = viewport.querySelector(".chapter-label:not(.is-leaving)");
+  if (current && current.textContent === name) return;
+
+  const next = document.createElement("span");
+  next.className = "chapter-label";
+  next.textContent = name;
+
+  if (!current || direction === 0) {
+    viewport.replaceChildren(next);
+    return;
+  }
+
+  // Slide the old label out and the new one in, following the scroll direction.
+  const dir = direction > 0 ? "up" : "down";
+  viewport.querySelectorAll(".is-leaving").forEach((el) => el.remove());
+  current.classList.add("is-leaving", `leave-${dir}`);
+  current.setAttribute("aria-hidden", "true");
+  current.addEventListener("animationend", () => current.remove(), { once: true });
+  next.classList.add(`enter-${dir}`);
+  next.addEventListener("animationend", () => next.classList.remove(`enter-${dir}`), { once: true });
+  viewport.appendChild(next);
+}
+
 function setActiveChapter(idx) {
-  if (idx === activeChapter) return;
+  if (idx === activeChapter || idx < 0) return;
+  const direction = activeChapter < 0 ? 0 : Math.sign(idx - activeChapter);
   activeChapter = idx;
   document.querySelectorAll(".toc-pill").forEach((link, i) => {
     const isActive = i === idx;
     link.classList.toggle("active", isActive);
     if (isActive) link.setAttribute("aria-current", "location");
     else link.removeAttribute("aria-current");
+  });
+  renderChapterIndicator(idx, direction);
+}
+
+function isChapterMenuOpen() {
+  return document.getElementById("chapter-trigger").getAttribute("aria-expanded") === "true";
+}
+
+// Anchor the strip to the trigger's right edge (CSS ignores it on phones).
+function positionChapterMenu() {
+  const topbar = document.querySelector(".topbar");
+  const trigger = document.getElementById("chapter-trigger");
+  const left = trigger.getBoundingClientRect().right - topbar.getBoundingClientRect().left;
+  topbar.style.setProperty("--chapter-menu-left", `${Math.round(left)}px`);
+}
+
+function scrollActiveChapterIntoStrip() {
+  const menu = document.getElementById("chapter-menu");
+  const active = menu.querySelector(".toc-pill.active");
+  if (!active) return;
+  menu.scrollLeft = active.offsetLeft - (menu.clientWidth - active.offsetWidth) / 2;
+}
+
+function setChapterMenuOpen(open) {
+  const trigger = document.getElementById("chapter-trigger");
+  const menu = document.getElementById("chapter-menu");
+  if (open) positionChapterMenu();
+  trigger.setAttribute("aria-expanded", String(open));
+  menu.hidden = !open;
+  if (open) scrollActiveChapterIntoStrip();
+}
+
+function initChapterMenu() {
+  const nav = document.querySelector(".chapter-nav");
+  const trigger = document.getElementById("chapter-trigger");
+  const menu = document.getElementById("chapter-menu");
+  const links = () => [...menu.querySelectorAll(".toc-pill")];
+
+  trigger.addEventListener("click", (e) => {
+    const open = !isChapterMenuOpen();
+    setChapterMenuOpen(open);
+    // Keyboard activation (detail === 0): move focus straight into the strip.
+    if (open && e.detail === 0) (menu.querySelector(".toc-pill.active") || links()[0]).focus();
+  });
+
+  trigger.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      e.preventDefault();
+      setChapterMenuOpen(true);
+      (menu.querySelector(".toc-pill.active") || links()[0]).focus();
+    }
+  });
+
+  // Arrow keys / Home / End move between chapters, Escape closes.
+  menu.addEventListener("keydown", (e) => {
+    const all = links();
+    const i = all.indexOf(document.activeElement);
+    let target = null;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") target = all[Math.min(i + 1, all.length - 1)];
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") target = all[Math.max(i - 1, 0)];
+    else if (e.key === "Home") target = all[0];
+    else if (e.key === "End") target = all[all.length - 1];
+    if (!target) return;
+    e.preventDefault();
+    target.focus();
+    target.scrollIntoView({ inline: "nearest", block: "nearest" });
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && isChapterMenuOpen()) {
+      setChapterMenuOpen(false);
+      trigger.focus();
+    }
+  });
+
+  // Jumping to a chapter: close the strip and hand focus to the section so
+  // screen readers and Tab continue from there.
+  menu.addEventListener("click", (e) => {
+    const link = e.target.closest(".toc-pill");
+    if (!link) return;
+    setChapterMenuOpen(false);
+    const section = document.querySelector(link.getAttribute("href"));
+    if (section) {
+      if (!section.hasAttribute("tabindex")) section.setAttribute("tabindex", "-1");
+      section.focus({ preventScroll: true });
+    }
+  });
+
+  // Close on outside click, when focus leaves the nav, or when the page scrolls.
+  document.addEventListener("pointerdown", (e) => {
+    if (isChapterMenuOpen() && !nav.contains(e.target)) setChapterMenuOpen(false);
+  });
+  nav.addEventListener("focusout", (e) => {
+    if (isChapterMenuOpen() && e.relatedTarget && !nav.contains(e.relatedTarget)) setChapterMenuOpen(false);
+  });
+  window.addEventListener("scroll", () => {
+    if (isChapterMenuOpen()) setChapterMenuOpen(false);
+  }, { passive: true });
+
+  // Vertical mouse wheel scrolls the strip sideways.
+  menu.addEventListener("wheel", (e) => {
+    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    e.preventDefault();
+    menu.scrollLeft += e.deltaY;
+  }, { passive: false });
+
+  window.addEventListener("resize", () => {
+    if (isChapterMenuOpen()) positionChapterMenu();
   });
 }
 
@@ -598,8 +748,8 @@ function initChapterSpy() {
   );
   sections.forEach((s) => s && spy.observe(s));
 
-  // La última sección puede ser demasiado corta para cruzar la línea del 45 %:
-  // al llegar al final de la página se marca explícitamente.
+  // The last section may be too short to ever cross the 45% line,
+  // so mark it explicitly once the page bottom is reached.
   window.addEventListener("scroll", () => {
     const doc = document.documentElement;
     if (doc.scrollTop + doc.clientHeight >= doc.scrollHeight - 4) {
@@ -623,6 +773,9 @@ function applyLanguage(lang) {
   document.querySelectorAll(".toc-pill").forEach((el, idx) => {
     if (dict.tocLabels[idx]) el.textContent = dict.tocLabels[idx];
   });
+  document.getElementById("chapter-nav").setAttribute("aria-label", dict.chapterNavLabel);
+  document.getElementById("chapter-current-prefix").textContent = dict.currentChapterPrefix;
+  if (activeChapter >= 0) renderChapterIndicator(activeChapter);
   renderPhysicsDiagrams(document.getElementById("physics-diagrams"), lang);
 }
 
@@ -781,7 +934,6 @@ async function init() {
     { threshold: 0.45, rootMargin: "-15% 0px -35% 0px" }
   );
   document.querySelectorAll(".step-card[data-step]").forEach((el) => observer.observe(el));
-  initChapterSpy();
 
   window.addEventListener("scroll", () => {
     const doc = document.documentElement;
@@ -789,6 +941,10 @@ async function init() {
     document.getElementById("progress-fill").style.width = `${Math.min(100, Math.max(0, pct))}%`;
   }, { passive: true });
 }
+
+// Header navigation does not depend on the data fetch, so it works even if init() fails.
+initChapterSpy();
+initChapterMenu();
 
 init().catch((err) => {
   console.error("GeoSignal StoryMap init error:", err);

@@ -14,18 +14,28 @@
       <strong>GeoSignal</strong>
       <span class="sub" id="brand-sub">Calvos de Randín · Informe NISAR</span>
     </div>
-    <nav class="toc-pills" aria-label="Capítulos del informe">
-      <a class="toc-pill active" data-step="0" href="#resumen">Resumen</a>
-      <a class="toc-pill" data-step="1" href="#cap-1">1. Incendio</a>
-      <a class="toc-pill" data-step="2" href="#cap-2">2. Física SAR</a>
-      <a class="toc-pill" data-step="3" href="#cap-3">3. Serie Jul–Oct</a>
-      <a class="toc-pill" data-step="4" href="#cap-4">4. Óptico vs Radar</a>
-      <a class="toc-pill" data-step="5" href="#cap-5">5. Niveles dB</a>
-      <a class="toc-pill" data-step="6" href="#cap-6">6. Qué mide</a>
-      <a class="toc-pill" data-step="7" href="#cap-7">7. Cuencas</a>
-      <a class="toc-pill" data-step="8" href="#cap-8">8. Lluvia</a>
-      <a class="toc-pill" data-step="9" href="#cap-9">9. Futuro</a>
-      <a class="toc-pill" data-step="10" href="#cap-10">10. Límites</a>
+    <nav class="chapter-nav" id="chapter-nav" aria-label="Capítulos del informe">
+      <button class="chapter-trigger" id="chapter-trigger" type="button" aria-expanded="false" aria-controls="chapter-menu">
+        <span class="sr-only" id="chapter-current-prefix">Capítulo actual:</span>
+        <span class="chapter-count" id="chapter-count" hidden></span>
+        <span class="chapter-label-viewport" id="chapter-label-viewport"><span class="chapter-label">Resumen</span></span>
+        <svg class="chapter-chevron" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false">
+          <path d="M4.5 2.5 8 6l-3.5 3.5"fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+      <ol class="chapter-menu" id="chapter-menu" hidden>
+        <li><a class="toc-pill active" href="#resumen" aria-current="location">Resumen</a></li>
+        <li><a class="toc-pill" href="#cap-1">1. Incendio</a></li>
+        <li><a class="toc-pill" href="#cap-2">2. Física SAR</a></li>
+        <li><a class="toc-pill" href="#cap-3">3. Serie Jul–Oct</a></li>
+        <li><a class="toc-pill" href="#cap-4">4. Óptico vs Radar</a></li>
+        <li><a class="toc-pill" href="#cap-5">5. Niveles dB</a></li>
+        <li><a class="toc-pill" href="#cap-6">6. Qué mide</a></li>
+        <li><a class="toc-pill" href="#cap-7">7. Cuencas</a></li>
+        <li><a class="toc-pill" href="#cap-8">8. Lluvia</a></li>
+        <li><a class="toc-pill" href="#cap-9">9. Futuro</a></li>
+        <li><a class="toc-pill" href="#cap-10">10. Límites</a></li>
+      </ol>
     </nav>
     <div class="topbar-actions">
       <button class="btn-ghost" id="btn-lang" type="button">EN</button>

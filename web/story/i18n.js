@@ -5,6 +5,8 @@ export const I18N = {
     brandSub: "Calvos de Randín · Informe NISAR",
     printBtn: "Imprimir / PDF",
     langBtn: "EN",
+    chapterNavLabel: "Capítulos del informe",
+    currentChapterPrefix: "Capítulo actual:",
     heroEyebrow: "NASA Space Apps · Dancing with the SARs · Informe estructurado",
     heroTitle: "Calvos de Randín: radiografía radar de un incendio y su riesgo hídrico posterior",
     heroLead:
@@ -27,6 +29,8 @@ export const I18N = {
     brandSub: "Calvos de Randín · NISAR Report",
     printBtn: "Print / PDF",
     langBtn: "ES",
+    chapterNavLabel: "Report chapters",
+    currentChapterPrefix: "Current chapter:",
     heroEyebrow: "NASA Space Apps · Dancing with the SARs · Structured Report",
     heroTitle: "Calvos de Randín: L-band radar anatomy of a wildfire and post-fire runoff risk",
     heroLead:
