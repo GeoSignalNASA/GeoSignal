@@ -18,7 +18,8 @@
         -7.977378,
         41.833196
       ]
-    ]
+    ],
+    "label": "NISAR Banda L · HV pre (19-sep)"
   },
   "hv_post.png": {
     "url": "assets/data/overlays/hv_post.png",
@@ -39,7 +40,8 @@
         -7.977378,
         41.833196
       ]
-    ]
+    ],
+    "label": "NISAR Banda L · HV post (01-oct)"
   },
   "dhv_classes.png": {
     "url": "assets/data/overlays/dhv_classes.png",
@@ -60,7 +62,8 @@
         -7.977378,
         41.833196
       ]
-    ]
+    ],
+    "label": "NISAR Banda L · Severidad ΔHV (01-oct)"
   },
   "dhv_oct01_cal.png": {
     "url": "assets/data/overlays/dhv_oct01_cal.png",
@@ -81,7 +84,8 @@
         -7.977378,
         41.833196
       ]
-    ]
+    ],
+    "label": "NISAR Banda L · ΔHV 01-oct sin sesgo"
   },
   "dhv_oct25.png": {
     "url": "assets/data/overlays/dhv_oct25.png",
@@ -102,7 +106,8 @@
         -7.977378,
         41.833196
       ]
-    ]
+    ],
+    "label": "NISAR Banda L · Severidad ΔHV (25-oct seco)"
   },
   "dhv_cont.png": {
     "url": "assets/data/overlays/dhv_cont.png",
@@ -123,7 +128,8 @@
         -7.977378,
         41.833196
       ]
-    ]
+    ],
+    "label": "NISAR Banda L · ΔHV continuo"
   },
   "dhh.png": {
     "url": "assets/data/overlays/dhh.png",
@@ -144,7 +150,8 @@
         -7.977378,
         41.833196
       ]
-    ]
+    ],
+    "label": "NISAR Banda L · ΔHH (doble rebote)"
   },
   "dnbr_s2.png": {
     "url": "assets/data/overlays/dnbr_s2.png",
@@ -165,7 +172,8 @@
         -7.977378,
         41.833196
       ]
-    ]
+    ],
+    "label": "Sentinel-2 dNBR (20-sep → 15-oct)"
   },
   "dhv_q8.png": {
     "url": "assets/data/overlays/dhv_q8.png",

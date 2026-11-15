@@ -13,7 +13,8 @@ function el(tag, attrs = {}, text = null) {
   return n;
 }
 
-export function renderTimeseriesChart(container, series, selectedDate, onSelectDate) {
+export function renderTimeseriesChart(container, series, selectedDate, onSelectDate, lang = "es") {
+  const isEn = lang === "en";
   const W = 540, H = 230;
   const pad = { l: 54, r: 50, t: 20, b: 40 };
   const pw = W - pad.l - pad.r;
@@ -26,7 +27,11 @@ export function renderTimeseriesChart(container, series, selectedDate, onSelectD
   const xAt = (i) => pad.l + (i / Math.max(series.length - 1, 1)) * pw;
   const yAt = (v) => pad.t + ((yMax - v) / (yMax - yMin)) * ph;
 
-  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Serie temporal NISAR HV y SME2" });
+  const svg = el("svg", {
+    viewBox: `0 0 ${W} ${H}`,
+    role: "img",
+    "aria-label": isEn ? "NISAR HV and SME2 time series" : "Serie temporal NISAR HV y SME2",
+  });
 
   // Banda vertical del incendio (entre 2026-09-19 y 2026-10-01)
   const idxPre = series.findIndex((d) => d.date === "2026-09-19");
@@ -35,7 +40,13 @@ export function renderTimeseriesChart(container, series, selectedDate, onSelectD
     const x1 = xAt(idxPre) + (xAt(idxPost) - xAt(idxPre)) * 0.35;
     const x2 = xAt(idxPre) + (xAt(idxPost) - xAt(idxPre)) * 0.65;
     svg.appendChild(el("rect", { x: x1, y: pad.t, width: Math.max(4, x2 - x1), height: ph, fill: "rgba(142,67,33,0.12)" }));
-    svg.appendChild(el("text", { x: (x1 + x2) / 2, y: pad.t + 11, "text-anchor": "middle", fill: "#A0521F", "font-size": "11", "font-family": "Inter, ui-sans-serif, sans-serif" }, "INCENDIO 24-27 SEP"));
+    svg.appendChild(
+      el(
+        "text",
+        { x: (x1 + x2) / 2, y: pad.t + 11, "text-anchor": "middle", fill: "#A0521F", "font-size": "11", "font-family": "Inter, ui-sans-serif, sans-serif" },
+        isEn ? "FIRE SEP 24–27" : "INCENDIO 24-27 SEP"
+      )
+    );
   }
 
   // Rejilla horizontal dB
@@ -93,7 +104,15 @@ export function renderTimeseriesChart(container, series, selectedDate, onSelectD
     // Hitbox invisible más grande para accesibilidad táctil
     const hit = el("circle", { cx: x, cy: yf, r: 14, fill: "transparent", style: "cursor:pointer" });
     hit.addEventListener("click", () => onSelectDate(d.date));
-    hit.appendChild(el("title", {}, `${d.date} · HV perímetro: ${d.hv_fire_mean} dB · control: ${d.hv_ctrl_mean} dB · SME2: ${d.sme2_fire_mean ?? "—"} m³/m³`));
+    hit.appendChild(
+      el(
+        "title",
+        {},
+        isEn
+          ? `${d.date} · HV perimeter: ${d.hv_fire_mean} dB · control: ${d.hv_ctrl_mean} dB · SME2: ${d.sme2_fire_mean ?? "—"} m³/m³`
+          : `${d.date} · HV perímetro: ${d.hv_fire_mean} dB · control: ${d.hv_ctrl_mean} dB · SME2: ${d.sme2_fire_mean ?? "—"} m³/m³`
+      )
+    );
     svg.appendChild(hit);
 
     svg.appendChild(
@@ -105,7 +124,8 @@ export function renderTimeseriesChart(container, series, selectedDate, onSelectD
   container.appendChild(svg);
 }
 
-export function renderThresholdCurve(container, curve, currentDb, meta) {
+export function renderThresholdCurve(container, curve, currentDb, meta, lang = "es") {
+  const isEn = lang === "en";
   const W = 540, H = 220;
   const pad = { l: 58, r: 58, t: 18, b: 38 };
   const pw = W - pad.l - pad.r;
@@ -117,7 +137,11 @@ export function renderThresholdCurve(container, curve, currentDb, meta) {
   const yHa = (ha) => pad.t + (1 - ha / yMax) * ph;
   const yFp = (fp) => pad.t + (1 - Math.min(fp, 40) / 40) * ph;
 
-  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Hectáreas quemadas según umbral de dB" });
+  const svg = el("svg", {
+    viewBox: `0 0 ${W} ${H}`,
+    role: "img",
+    "aria-label": isEn ? "Burned hectares by dB threshold" : "Hectáreas quemadas según umbral de dB",
+  });
 
   // Referencias oficiales Xunta y EFFIS
   [
@@ -155,7 +179,8 @@ export function renderThresholdCurve(container, curve, currentDb, meta) {
   container.appendChild(svg);
 }
 
-export function renderHistogramChart(container, hist) {
+export function renderHistogramChart(container, hist, lang = "es") {
+  const isEn = lang === "en";
   const W = 540, H = 180;
   const pad = { l: 24, r: 16, t: 18, b: 34 };
   const pw = W - pad.l - pad.r;
@@ -166,7 +191,11 @@ export function renderHistogramChart(container, hist) {
   const xAt = (v) => pad.l + ((v - xMin) / (xMax - xMin)) * pw;
   const yAt = (d) => pad.t + (1 - d / maxD) * ph;
 
-  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Distribución de ΔHV dentro y fuera del perímetro" });
+  const svg = el("svg", {
+    viewBox: `0 0 ${W} ${H}`,
+    role: "img",
+    "aria-label": isEn ? "ΔHV distribution inside and outside perimeter" : "Distribución de ΔHV dentro y fuera del perímetro",
+  });
 
   // Línea umbral -1.5 dB
   const tx = xAt(-1.5);

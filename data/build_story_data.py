@@ -76,31 +76,34 @@ def save_rgba(rgba, path, colors=64):
     img.save(path, format="PNG", optimize=True)
 
 
-def render_hv_grayscale(arr, vmin=-20.0, vmax=-5.0):
+def render_hv_grayscale(arr, vmin=-21.0, vmax=-6.5):
     h, w = arr.shape
     norm = np.nan_to_num(np.clip((arr - vmin) / (vmax - vmin), 0.0, 1.0), nan=0.0)
-    gray = np.round(norm * 255.0).astype(np.uint8)
-    # Suavizado de bordes (24 px) para fundir suavemente con el mapa base
-    pad = max(8, min(h, w) // 16)
+    # Ligera curva perceptual en tono carbón->marfil para evitar gris plano
+    t = np.power(norm, 0.9)
+    r = np.round(28.0 + t * (246.0 - 28.0)).astype(np.uint8)
+    g = np.round(24.0 + t * (241.0 - 24.0)).astype(np.uint8)
+    b = np.round(20.0 + t * (232.0 - 20.0)).astype(np.uint8)
+    # Borde limpio de 4 px sin transparencia sucia en el interior
+    pad = 4
     wy = np.minimum(np.arange(h), h - 1 - np.arange(h)) / float(pad)
     wx = np.minimum(np.arange(w), w - 1 - np.arange(w)) / float(pad)
     feather = np.clip(np.minimum(wy[:, None], wx[None, :]), 0.0, 1.0)
-    alpha = np.where(np.isfinite(arr), np.round(220.0 * feather), 0).astype(np.uint8)
-    rgba = np.stack([gray, gray, gray, alpha], axis=-1)
-    return rgba
+    alpha = np.where(np.isfinite(arr), np.round(248.0 * feather), 0).astype(np.uint8)
+    return np.stack([r, g, b, alpha], axis=-1)
 
 
 def render_dnbr_classes(dnbr):
-    # Clases USGS dNBR: >=0.10 baja, >=0.27 mod-alta, >=0.44 alta
+    # Clases USGS dNBR en tonos cálidos armónicos: >=0.10 baja, >=0.27 mod-alta, >=0.44 alta
     h, w = dnbr.shape
     rgba = np.zeros((h, w, 4), dtype=np.uint8)
     valid = np.isfinite(dnbr)
     c1 = valid & (dnbr >= 0.10) & (dnbr < 0.27)
     c2 = valid & (dnbr >= 0.27) & (dnbr < 0.44)
     c3 = valid & (dnbr >= 0.44)
-    rgba[c1] = [57, 232, 224, 175]
-    rgba[c2] = [246, 201, 99, 210]
-    rgba[c3] = [226, 121, 60, 235]
+    rgba[c1] = [233, 198, 107, 190]
+    rgba[c2] = [217, 142, 58, 220]
+    rgba[c3] = [142, 47, 28, 240]
     return rgba
 
 
@@ -137,21 +140,21 @@ def render_dhv_continuous(dhv):
 
 
 def render_dhh_diverging(dhh):
-    # Divergente azul (caída <= -1 dB) vs dorado/naranja (subida / doble rebote >= +1 dB)
+    # Divergente azul agua (caída <= -1.2 dB) vs cobre (picos de doble rebote >= +2.2 dB sobre el sesgo de lluvia)
     h, w = dhh.shape
     rgba = np.zeros((h, w, 4), dtype=np.uint8)
-    neg = np.isfinite(dhh) & (dhh <= -1.0)
-    pos = np.isfinite(dhh) & (dhh >= 1.0)
-    tn = np.clip((-dhh - 1.0) / 5.0, 0.0, 1.0)
-    tp = np.clip((dhh - 1.0) / 5.0, 0.0, 1.0)
-    rgba[neg, 0] = 56
-    rgba[neg, 1] = (189 - 85 * tn[neg]).astype(np.uint8)
-    rgba[neg, 2] = 248
-    rgba[neg, 3] = (140 + 100 * tn[neg]).astype(np.uint8)
-    rgba[pos, 0] = 245
-    rgba[pos, 1] = (185 - 85 * tp[pos]).astype(np.uint8)
-    rgba[pos, 2] = 50
-    rgba[pos, 3] = (140 + 100 * tp[pos]).astype(np.uint8)
+    neg = np.isfinite(dhh) & (dhh <= -1.2)
+    pos = np.isfinite(dhh) & (dhh >= 2.2)
+    tn = np.clip((-dhh - 1.2) / 4.5, 0.0, 1.0)
+    tp = np.clip((dhh - 2.2) / 4.5, 0.0, 1.0)
+    rgba[neg, 0] = (134 - (134 - 35) * tn[neg]).astype(np.uint8)
+    rgba[neg, 1] = (176 - (176 - 89) * tn[neg]).astype(np.uint8)
+    rgba[neg, 2] = (169 - (169 - 106) * tn[neg]).astype(np.uint8)
+    rgba[neg, 3] = (165 + 75 * tn[neg]).astype(np.uint8)
+    rgba[pos, 0] = (217 - (217 - 142) * tp[pos]).astype(np.uint8)
+    rgba[pos, 1] = (142 - (142 - 67) * tp[pos]).astype(np.uint8)
+    rgba[pos, 2] = (58 - (58 - 33) * tp[pos]).astype(np.uint8)
+    rgba[pos, 3] = (160 + 80 * tp[pos]).astype(np.uint8)
     return rgba
 
 
@@ -443,12 +446,25 @@ def main():
         }
         layers_to_export.append(("dnbr_s2.png", dnbr_arr, render_dnbr_classes, 680))
 
+    overlay_labels = {
+        "hv_pre.png": "NISAR Banda L · HV pre (19-sep)",
+        "hv_post.png": "NISAR Banda L · HV post (01-oct)",
+        "dhv_classes.png": "NISAR Banda L · Severidad ΔHV (01-oct)",
+        "dhv_oct01_cal.png": "NISAR Banda L · ΔHV 01-oct sin sesgo",
+        "dhv_oct25.png": "NISAR Banda L · Severidad ΔHV (25-oct seco)",
+        "dhv_cont.png": "NISAR Banda L · ΔHV continuo",
+        "dhh.png": "NISAR Banda L · ΔHH (doble rebote)",
+        "dnbr_s2.png": "Sentinel-2 dNBR (20-sep → 15-oct)",
+    }
     for fname, arr, renderer, out_w in layers_to_export:
         merc_arr, corners = reproject_to_3857(arr, aoi_tf, src_crs, out_w=out_w)
         rgba = renderer(merc_arr)
         out_p = os.path.join(OVERLAYS_DIR, fname)
         save_rgba(rgba, out_p)
-        overlays_meta[fname] = {"url": f"assets/data/overlays/{fname}", "coordinates": corners}
+        meta_entry = {"url": f"assets/data/overlays/{fname}", "coordinates": corners}
+        if fname in overlay_labels:
+            meta_entry["label"] = overlay_labels[fname]
+        overlays_meta[fname] = meta_entry
 
     # Cuantización 8-bit de ΔHV para filtrado instantáneo por umbral en canvas del navegador
     dhv_merc, dhv_corners = reproject_to_3857(dhv, aoi_tf, src_crs, out_w=520)
@@ -491,6 +507,12 @@ def main():
     if os.path.exists(rain_src):
         rain_gdf = gpd.read_file(rain_src).to_crs("EPSG:4326")
         rain_gdf.to_file(os.path.join(ASSETS_DATA_DIR, "rain_channels.geojson"), driver="GeoJSON")
+
+    barriers_src = os.path.join(RAW_DIR, "barrier_candidates.geojson")
+    if os.path.exists(barriers_src):
+        barriers_gdf = gpd.read_file(barriers_src).to_crs("EPSG:4326")
+        barriers_gdf["relevant"] = barriers_gdf["dist_from_fire_m"].astype(float) < 3000.0
+        barriers_gdf.to_file(os.path.join(ASSETS_DATA_DIR, "barrier_candidates.geojson"), driver="GeoJSON")
 
     basins_summary, assets_by_basin = build_basins_and_sensitivity(assets_gdf, perim_gdf)
 
