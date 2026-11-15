@@ -242,6 +242,10 @@ def build_basins_and_sensitivity(assets_gdf, perim_gdf):
         bid = int(row["basin_id"])
         by_basin.setdefault(bid, []).append({"name": row["name"], "type": row["type"]})
     basins["downstream_assets"] = [json.dumps(by_basin.get(int(bid), []), ensure_ascii=False) for bid in basins["basin_id"]]
+    # Nombre del núcleo más cercano, para no mostrar nunca un "cuenca #N" pelado en la web.
+    basins["place"] = [
+        (by_basin.get(int(bid)) or [{"name": None}])[0]["name"] for bid in basins["basin_id"]
+    ]
 
     # Simplificar geometría (~10 m) para mantener < 250 KB en GeoJSON web
     basins_out = basins.copy()
@@ -251,7 +255,7 @@ def build_basins_and_sensitivity(assets_gdf, perim_gdf):
     print(f"wrote {out_path} ({os.path.getsize(out_path) // 1024} KB, {len(basins_out)} basins)")
 
     top = basins.sort_values("risk_mean", ascending=False)[
-        ["basin_id", "rank", "risk_mean", "risk_mean_3db", "risk_mean_6db", "burned_pct", "burned_ha", "area_ha", "slope_mean_deg", "moisture_mean", "overlaps_fire"]
+        ["basin_id", "place", "rank", "risk_mean", "risk_mean_3db", "risk_mean_6db", "burned_pct", "burned_ha", "area_ha", "slope_mean_deg", "moisture_mean", "overlaps_fire"]
     ]
     return top.to_dict(orient="records"), by_basin
 

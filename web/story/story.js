@@ -539,7 +539,7 @@ function selectBasinById(basinId) {
 
   document.getElementById("basin-inspector").innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem">
-      <strong style="font-size:1.05rem">${d.basinTitle(p.basin_id)}</strong>
+      <strong style="font-size:1.05rem">${d.basinTitle(p.basin_id, assets[0]?.name)}</strong>
       <span class="step-badge">${d.basinRank(p.rank, BASINS_GJ.features.length)}</span>
     </div>
     <div class="mini-metrics">
@@ -585,7 +585,7 @@ function selectBarrierByIdx(idx) {
 
   host.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap">
-      <strong style="font-size:0.96rem">${d.barrierTitle(Number(p.idx) + 1)}</strong>
+      <strong style="font-size:0.96rem">${d.barrierTitle(distStr)}</strong>
       ${relLabel}
     </div>
     <div class="pill-group" style="margin-top:0.55rem">${btns}</div>
@@ -813,8 +813,15 @@ function populateExecutiveSummary() {
   );
   document.getElementById("kpi-dhv").textContent = `${pol.hv_fire_net_db ?? pol.hv_fire_mean_db} dB`;
   document.getElementById("kpi-dhv-sub").textContent = d.dhvSub(pol.ctrl_offset_oct01_db ?? 0, pol.hv_oct25_fire_mean_db);
-  document.getElementById("kpi-basins").textContent = d.basinsJoin(top1.basin_id, top2.basin_id);
-  document.getElementById("kpi-basins-sub").textContent = d.basinsSub(STATS.basins_summary.length);
+  document.getElementById("kpi-basins").textContent = d.basinsJoin(
+    top1.place || `#${top1.basin_id}`,
+    top2.place || `#${top2.basin_id}`
+  );
+  const third = STATS.basins_summary[2];
+  document.getElementById("kpi-basins-sub").textContent = d.basinsSub(
+    STATS.basins_summary.length,
+    third?.place || `#${third?.basin_id}`
+  );
 
   const maxBar = m.effis_ha;
   document.getElementById("bar-effis").style.width = "100%";
@@ -865,19 +872,6 @@ function populateExecutiveSummary() {
     );
   }
 
-  // Tabla QA en metodología
-  document.getElementById("qa-tbody").innerHTML = STATS.qa
-    .map(
-      (q) => `
-      <tr>
-        <td>${q.date}</td>
-        <td class="num">${q.valid_pct_perimeter}%</td>
-        <td class="num">${q.ctrl_hv_mean_db} dB</td>
-        <td class="num">${q.ctrl_deviation_db} dB</td>
-        <td><span class="${q.qa_pass ? "qa-pass" : "qa-flag"}">${q.qa_pass ? "PASS" : "FLAG"}</span></td>
-      </tr>`
-    )
-    .join("");
 }
 
 function updateThresholdReadout(db) {
