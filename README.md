@@ -64,6 +64,14 @@ extinción sobre el terreno; contadlo así en el pitch, no escondáis el número
   frente a 518 oficiales y 1.234 de EFFIS: preséntalo como "núcleo de quema
   severa en zona arbolada" (official: 370 ha arbolado + 148 ha pasto — el
   pasto no da la misma firma en L-band), no como el área total quemada.
+- **Actualización multitemporal (2026-11-15):** el par `19-sep -> 01-oct`
+  subestimaba (87,5 ha) porque el `01-oct` coincidió con suelo húmedo (SME2
+  `0,18->0,23`, sesgo `+1,16 dB` en control). Al promediar en potencia lineal
+  las 5 pasadas pre QA-pass (`jul-sep`) vs las 2 post secas (`13` y `25-oct`)
+  con multilook 5×5 y calibración de control (`extract_aoi_stack.py` +
+  `build_story_data.py`), emergen **324,9 ha** (`FP=0,16%`, `F1=0,80` vs
+  Sentinel-2 dNBR `>=0,27`). El resto hasta 483-518 ha corresponde a quema
+  bajo copa donde la banda L HV no ve cambio estructural (`ΔHV ≈ -0,07 dB`).
 
 **Ya descargado y procesado**: el par track 15/frame 23 (GCOV + SME2,
 ~4,1 GB), el perímetro de EFFIS, el DEM de Copernicus (GLO-30, bucket

@@ -110,8 +110,10 @@ def load_territory(data_dir=None):
     rain_gj = _read("rain_channels.geojson", data_dir)
     barriers_gj = _read("barrier_candidates.geojson", data_dir)
 
-    # Same choice as the web simulator: the dry 25-Oct scene when present.
-    if stats.get("severity_oct25", {}).get("burned_total_ha"):
+    # Same choice as the web simulator: linear multitemporal dry-pass composite when present.
+    if stats.get("severity_multitemporal", {}).get("burned_total_ha"):
+        burned_ha, burned_date = stats["severity_multitemporal"]["burned_total_ha"], "2026-10-25"
+    elif stats.get("severity_oct25", {}).get("burned_total_ha"):
         burned_ha, burned_date = stats["severity_oct25"]["burned_total_ha"], "2026-10-25"
     else:
         burned_ha, burned_date = stats["severity_smooth"]["burned_total_ha"], stats["meta"]["post_date"]

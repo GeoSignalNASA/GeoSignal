@@ -24,10 +24,11 @@ export const I18N = {
     overlayLabels: {
       "hv_pre.png": "NISAR Banda L · HV pre (19-sep)",
       "hv_post.png": "NISAR Banda L · HV post (01-oct)",
+      "dhv_mt.png": "NISAR Banda L · Severidad multitemporal ΔHV (jul–oct)",
       "dhv_classes.png": "NISAR Banda L · Severidad ΔHV (01-oct)",
       "dhv_oct01_cal.png": "NISAR Banda L · ΔHV 01-oct sin sesgo",
       "dhv_oct25.png": "NISAR Banda L · Severidad ΔHV (25-oct seco)",
-      "dhv_cont.png": "NISAR Banda L · ΔHV continuo",
+      "dhv_cont.png": "NISAR Banda L · ΔHV multitemporal continuo",
       "dhh.png": "NISAR Banda L · ΔHH (doble rebote)",
       "dnbr_s2.png": "Sentinel-2 dNBR (20-sep → 15-oct)",
       "optical_fire.jpg": "Sentinel-2 L2A 2026-09-25 (incendio activo)",
@@ -146,21 +147,23 @@ export const I18N = {
     dynamic: {
       locale: "es-ES",
       xuntaSub: (forest, shrub) => `${forest} ha arbolado + ${shrub} ha pasto`,
-      nisarSub: (oct01, raw, oct25) => `01-oct (100m): ${oct01} ha · 20m raw: ${raw} ha · 25-oct seco: ${oct25} ha`,
+      nisarSub: (oct01, rawMt, f1) => `5 pre + 2 post secas (F1=${f1} vs dNBR) · 01-oct mojado: ${oct01} ha`,
       dhvSub: (offset, oct25Mean) =>
-        `Neto vs control 01-oct (+${offset} dB lluvia) · 25-oct seco: ${oct25Mean ?? "—"} dB`,
+        `Compuesto jul–oct · 01-oct (+${offset} dB lluvia) · 25-oct: ${oct25Mean ?? "—"} dB`,
       basinsJoin: (a, b) => `#${a} y #${b}`,
-      basinsSub: (total) => `Lideran las ${total} cuencas (>20× sobre la #3)`,
-      polHvLabel: "HV (cruzada · copa 3D)",
+      basinsSub: (total) => `Lideran las ${total} cuencas (>4,7× sobre la #3)`,
+      polHvLabel: "HV (cruzada · estructura)",
       polHhLabel: "HH (paralela · suelo/tronco)",
       polNet: (v) => `(neto ${v ?? "—"})`,
       hhBounceNote: (pct, hhCtrl) =>
         `El ${pct}% de los píxeles del perímetro muestran aumento de HH ≥ +1 dB el 01-oct (combinando el salto de humedad del control +${hhCtrl} dB y doble rebote en troncos).`,
-      dnbrNote: (pre, post, lowHa, highHa, oct25Ha, r) =>
+      dnbrNote: (pre, post, refHa, tpHa, sarHa, f1, omHa, omDhv, r) =>
         `<strong>Validación cruzada óptica (Sentinel-2 dNBR, ${pre} → ${post}):</strong> ` +
-        `<strong>${lowHa} ha</strong> con dNBR ≥ 0,10 (<strong>${highHa} ha</strong> severidad alta ≥ 0,44), ` +
-        `coincidiendo en orden de magnitud con las 518 ha oficiales y las <strong>${oct25Ha} ha</strong> NISAR seco del 25-oct ` +
-        `(correlación píxel a píxel <code>r = ${r}</code> entre dNBR y ΔHV_oct25).`,
+        `De las <strong>${sarHa} ha</strong> detectadas por NISAR multitemporal, <strong>${tpHa} ha</strong> coinciden ` +
+        `con cicatriz dNBR ≥ 0,27 (<strong>${refHa} ha</strong> en óptico; <code>F1 = ${f1}</code>, <code>r = ${r}</code>). ` +
+        `Las <strong>${omHa} ha</strong> restantes son fuego bajo copa o quema leve invisible a 24 cm (<code>ΔHV medio = ${omDhv} dB</code>).`,
+      oct01WetSuffix: "(20m 01-oct mojado)",
+      oct01WetFp: "0,0% (enmascarado)",
       octCalSuffix: "(sin sesgo)",
       octCalFp: "control ≈ 0 dB",
       oct25Suffix: "(25-oct seco)",
@@ -222,8 +225,9 @@ export const I18N = {
     barTitle: "Estimated burned area by sensor and method",
     bar1Lbl: "Automated EFFIS (outer boundary)",
     bar2Lbl: "Xunta official (370 ha forest + 148 ha grass)",
-    bar3Lbl: "NISAR L-band 20 m unsmoothed (with speckle)",
-    bar4Lbl: "NISAR L-band smoothed 100 m (canopy core)",
+    bar3Lbl: "Sentinel-2 dNBR ≥ 0.27 (optical reference)",
+    bar4Lbl: "NISAR linear multitemporal (−1.5 dB, dry passes)",
+    bar5Lbl: "NISAR single Oct 1 pair (wet-soil bias)",
 
     c1Num: "01 · Study area & timeline",
     c1Title: "The Calvos de Randín wildfire (September 24–27, 2026)",
@@ -260,26 +264,27 @@ export const I18N = {
     c4Opt2: "Sep 30 (91% clouds)",
     c4Opt3: "Oct 15 (clear burn scar)",
     c4RightLbl: "Right panel (NISAR L-band / dNBR check):",
-    c4Rad1: "ΔHV severity (Oct 1)",
+    c4Rad1: "Multitemporal ΔHV severity (Jul–Oct)",
     c4Rad2: "ΔHV severity (Oct 25 dry)",
-    c4Rad3: "HV post (Oct 1)",
+    c4Rad3: "Oct 1 pair (wet bias)",
     c4Rad4: "Sentinel-2 dNBR (Sep 20→Oct 15)",
 
     c5Num: "09 · Parametric ΔHV sensitivity",
     c5Title: "Burn severity distribution across decibel thresholds (ΔHV)",
     c5P1:
-      "Not everything that burns loses the same structure. Splitting <code>ΔHV = HV(post) − HV(Sep 19)</code> into physical backscatter drop thresholds separates moderate crown scorch from severe canopy loss:",
+      "Splitting the multitemporal <code>ΔHV</code> composite (5 dry pre passes → Oct 13/25) into physical backscatter drop thresholds separates moderate impact from severe structural loss, and contrasts with the wet Oct 1 pass:",
     c5ThLvl: "ΔHV level",
     c5ThHa: "Hectares",
     c5ThPct: "% perimeter",
     c5ModeLbl: "Pass / calibration applied to table and map:",
-    c5Mode1: "Oct 1 raw (88.8 ha)",
-    c5Mode2: "Oct 1 rain-debiased (221.0 ha)",
-    c5Mode3: "Oct 25 dry consolidated (373.6 ha)",
+    c5Mode1: "Dry multitemporal (324.9 ha)",
+    c5Mode6: "Oct 1 wet pair (87.5 ha)",
+    c5Mode2: "Oct 1 rain-debiased (219 ha)",
+    c5Mode3: "Oct 25 dry only (360.5 ha)",
     c5Mode4: "Continuous map threshold",
     c5Mode5: "ΔHV ramp",
     c5CalNote:
-      "The <strong>October 1</strong> pass recorded a soil-moisture jump (SME2 0.18→0.23 m³/m³) lifting the exterior control ring by <strong>+1.22 dB</strong>. Removing that bias reveals 221 ha; once soils dry by <strong>October 25</strong>, <strong>373.6 ha</strong> emerge (≈ 370 ha official forest).",
+      "The <strong>October 1</strong> pass recorded a soil-moisture jump (SME2 0.18→0.23 m³/m³) lifting the exterior control ring by <strong>+1.16 dB</strong> and masking part of the scar. Linear-power averaging of QA-passing dry scenes stabilizes the burned estimate at <strong>324.9 ha</strong> (0.16% control FP; F1 = 0.80 vs dNBR).",
     c5SliderLbl: "Applied ΔHV threshold:",
     c5Pre1: "-1.5 dB (standard)",
     c5Pre2: "-3.0 dB (-50% signal)",
@@ -295,14 +300,14 @@ export const I18N = {
     c6Num: "05 · Resolution, polarization & land cover",
     c6Title: "Multilooking effects, HH/HV contrast & land-cover response",
     c6P1:
-      "Earth-science rigor requires naming sensor limits: L-band SAR accurately measures 3D canopy loss and top ~5 cm soil moisture (SME2), yet it <strong>does not chemically detect</strong> hydrophobic soil crusts and responds weakly to burned short grass.",
+      "The single <code>Sep 19 → Oct 1</code> pair yielded only <strong>87.5 ha</strong> smoothed because Oct 1 coincided with wet soil (<code>SME2 0.18→0.23 m³/m³</code>), lifting scene backscatter by <strong>+1.16 dB</strong>. Linear-power averaging of 5 dry pre-fire passes and 2 dry post-fire passes (<code>Oct 13</code> & <code>Oct 25</code>) with 5×5 multilooking and control calibration recovers <strong>324.9 ha</strong> (0.16% false positives).",
     c6P2:
-      "Crossing NISAR ΔHV with <strong>ESA WorldCover 10 m</strong> inside the perimeter confirms L-band selectivity: forest stands suffer far larger net drops than grassland/herbaceous cover, while parallel <strong>HH</strong> captures ground–trunk double-bounce.",
+      "The remaining gap to 518 ha official (or 483.1 ha optical <code>dNBR ≥ 0.27</code>) reflects a <strong>physical limit at 24 cm L-band</strong>: crossing with <strong>ESA WorldCover 2021</strong> (which labels Galician gorse/heath scrub as herbaceous) shows NISAR captures open shrub removal well, while surface fire beneath intact forest canopy leaves trunks and heavy branches standing (<code>ΔHV ≈ −0.07 dB</code>).",
     c6ThCov: "Land cover (WorldCover)",
     c6ThArea: "EFFIS area",
-    c6ThO1: "ΔHV Oct 1 (net)",
-    c6ThO25: "ΔHV Oct 25 (dry)",
-    c6ThPct: "% ≤−1.5 dB (Oct 25)",
+    c6ThO1: "ΔHV multitemp.",
+    c6ThO25: "NISAR (−1.5 dB)",
+    c6ThPct: "dNBR ≥ 0.27",
     c6ThPol: "Polarization",
     c6ThPer: "Perimeter",
     c6ThCtrl: "Control",
@@ -324,7 +329,7 @@ export const I18N = {
     c8P1:
       "Traces follow real <strong>D8 flow routing</strong> computed on the DEM from 8 perimeter points toward the Limia network and Salas Reservoir. Adjust hypothetical 24 h rainfall (assumed C = 0.6 runoff ratio) and inspect <strong>slope-break check-dam candidates</strong>.",
     c8SliderLbl: "Hypothetical 24h rainfall:",
-    c8M1: "Burned-core runoff (Oct 25)",
+    c8M1: "Burned-core runoff (NISAR)",
     c8M2: "Accumulated basin flow (Salas/Limia)",
     c8BarTitle: "Retention barrier candidates (slope break)",
     c8BarPrompt: "Select a point on the map or click a candidate below to inspect terrain rationale.",
@@ -353,10 +358,11 @@ export const I18N = {
     overlayLabels: {
       "hv_pre.png": "NISAR L-Band · HV pre (Sep 19)",
       "hv_post.png": "NISAR L-Band · HV post (Oct 1)",
+      "dhv_mt.png": "NISAR L-Band · Multitemporal ΔHV severity (Jul–Oct)",
       "dhv_classes.png": "NISAR L-Band · ΔHV severity (Oct 1)",
       "dhv_oct01_cal.png": "NISAR L-Band · ΔHV Oct 1 debiased",
       "dhv_oct25.png": "NISAR L-Band · ΔHV severity (Oct 25 dry)",
-      "dhv_cont.png": "NISAR L-Band · Continuous ΔHV",
+      "dhv_cont.png": "NISAR L-Band · Continuous multitemporal ΔHV",
       "dhh.png": "NISAR L-Band · ΔHH (double-bounce)",
       "dnbr_s2.png": "Sentinel-2 dNBR (Sep 20 → Oct 15)",
       "optical_fire.jpg": "Sentinel-2 L2A 2026-09-25 (active fire)",
@@ -475,21 +481,23 @@ export const I18N = {
     dynamic: {
       locale: "en-US",
       xuntaSub: (forest, shrub) => `${forest} ha forest + ${shrub} ha grassland`,
-      nisarSub: (oct01, raw, oct25) => `Oct 1 (100m): ${oct01} ha · 20m raw: ${raw} ha · Oct 25 dry: ${oct25} ha`,
+      nisarSub: (oct01, rawMt, f1) => `5 pre + 2 dry post (F1=${f1} vs dNBR) · wet Oct 1: ${oct01} ha`,
       dhvSub: (offset, oct25Mean) =>
-        `Net vs Oct 1 control (+${offset} dB rain) · Oct 25 dry: ${oct25Mean ?? "—"} dB`,
+        `Jul–Oct composite · Oct 1 (+${offset} dB rain) · Oct 25: ${oct25Mean ?? "—"} dB`,
       basinsJoin: (a, b) => `#${a} & #${b}`,
-      basinsSub: (total) => `Top among ${total} basins (>20× higher than #3)`,
-      polHvLabel: "HV (cross · 3D canopy)",
+      basinsSub: (total) => `Top among ${total} basins (>4.7× higher than #3)`,
+      polHvLabel: "HV (cross · structure)",
       polHhLabel: "HH (parallel · ground/trunk)",
       polNet: (v) => `(net ${v ?? "—"})`,
       hhBounceNote: (pct, hhCtrl) =>
         `${pct}% of perimeter pixels show an HH rise ≥ +1 dB on Oct 1 (combining the +${hhCtrl} dB control moisture jump with trunk double-bounce).`,
-      dnbrNote: (pre, post, lowHa, highHa, oct25Ha, r) =>
+      dnbrNote: (pre, post, refHa, tpHa, sarHa, f1, omHa, omDhv, r) =>
         `<strong>Optical cross-check (Sentinel-2 dNBR, ${pre} → ${post}):</strong> ` +
-        `<strong>${lowHa} ha</strong> with dNBR ≥ 0.10 (<strong>${highHa} ha</strong> high severity ≥ 0.44), ` +
-        `matching the order of magnitude of the 518 ha official perimeter and <strong>${oct25Ha} ha</strong> dry Oct 25 NISAR area ` +
-        `(pixel-wise correlation <code>r = ${r}</code> between dNBR and ΔHV_oct25).`,
+        `Of the <strong>${sarHa} ha</strong> detected by multitemporal NISAR, <strong>${tpHa} ha</strong> fall inside ` +
+        `the dNBR ≥ 0.27 scar (<strong>${refHa} ha</strong> optical; <code>F1 = ${f1}</code>, <code>r = ${r}</code>). ` +
+        `The remaining <strong>${omHa} ha</strong> are low-severity or under-canopy surface burn invisible at 24 cm (<code>mean ΔHV = ${omDhv} dB</code>).`,
+      oct01WetSuffix: "(20m Oct 1 wet)",
+      oct01WetFp: "0.0% (masked)",
       octCalSuffix: "(debiased)",
       octCalFp: "control ≈ 0 dB",
       oct25Suffix: "(Oct 25 dry)",

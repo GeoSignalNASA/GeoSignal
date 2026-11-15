@@ -96,14 +96,19 @@
             <span class="bar-val" id="val-xunta">—</span>
           </div>
           <div class="bar-row">
-            <span data-i18n="bar3Lbl">NISAR Banda L 20 m sin suavizar (con speckle)</span>
+            <span data-i18n="bar3Lbl">Sentinel-2 dNBR ≥ 0,27 (referencia óptica)</span>
             <div class="bar-track"><div class="bar-fill" id="bar-raw" style="background:var(--amber)"></div></div>
             <span class="bar-val" id="val-raw">—</span>
           </div>
           <div class="bar-row">
-            <span data-i18n="bar4Lbl">NISAR Banda L suavizado 100 m (núcleo de copa)</span>
+            <span data-i18n="bar4Lbl">NISAR multitemporal lineal (−1,5 dB, pasadas secas)</span>
             <div class="bar-track"><div class="bar-fill" id="bar-smooth" style="background:var(--accent)"></div></div>
             <span class="bar-val" id="val-smooth">—</span>
+          </div>
+          <div class="bar-row">
+            <span data-i18n="bar5Lbl">NISAR par único 01-oct (sesgado por suelo húmedo)</span>
+            <div class="bar-track"><div class="bar-fill" id="bar-wet" style="background:var(--tinta-2)"></div></div>
+            <span class="bar-val" id="val-wet">—</span>
           </div>
         </div>
       </section>
@@ -184,9 +189,9 @@
           </div>
           <div style="font-size:0.78rem;color:var(--text-muted);margin:0.5rem 0 0.35rem" data-i18n="c4RightLbl">Panel derecho (NISAR Banda L / validación dNBR):</div>
           <div class="pill-group">
-            <button class="pill-btn active" type="button" data-rad-key="dhv_classes.png" data-i18n="c4Rad1">Severidad ΔHV (01-oct)</button>
+            <button class="pill-btn active" type="button" data-rad-key="dhv_mt.png" data-i18n="c4Rad1">Severidad multitemporal (jul–oct)</button>
             <button class="pill-btn" type="button" data-rad-key="dhv_oct25.png" data-i18n="c4Rad2">Severidad ΔHV (25-oct seco)</button>
-            <button class="pill-btn" type="button" data-rad-key="hv_post.png" data-i18n="c4Rad3">HV post (01-oct)</button>
+            <button class="pill-btn" type="button" data-rad-key="dhv_classes.png" data-i18n="c4Rad3">Par 01-oct (húmedo)</button>
             <button class="pill-btn" type="button" data-rad-key="dnbr_s2.png" data-i18n="c4Rad4">Sentinel-2 dNBR (20-sep→15-oct)</button>
           </div>
         </div>
@@ -196,19 +201,22 @@
         <div class="step-num"><span data-i18n="c6Num">05 · Resolución, polarización y cobertura</span></div>
         <h2 data-i18n="c6Title">Efecto del multilooking, contraste HH/HV y respuesta por cobertura</h2>
         <p data-i18n-html="c6P1">
-          Sin filtro espacial (a 20 m), el umbral de <code>−1,5 dB</code> marca <strong>239 ha</strong>, pero gran parte es
-          <em>speckle</em> radar (la zona de control no quemada también dispara falsos positivos). Aplicando un suavizado
-          boxcar de 100 m (<em>multilooking</em> estándar), el ruido se colapsa y queda el núcleo real de daño en copa.
+          El par inicial <code>19-sep → 01-oct</code> arrojaba solo <strong>87,5 ha</strong> suavizadas porque la pasada
+          del 1 de octubre coincidió con suelo húmedo (<code>SME2 0,18→0,23 m³/m³</code>), elevando toda la escena en
+          <strong>+1,16 dB</strong> y tapando parte de la cicatriz. Promediando en <strong>potencia lineal</strong> las
+          5 pasadas secas previas y las 2 secas posteriores (<code>13</code> y <code>25-oct</code>), con multilook 5×5
+          y calibración de control, afloran <strong>324,9 ha</strong> (0,16 % de falsos positivos fuera del incendio).
         </p>
         <p data-i18n-html="c6P2">
-          ¿Y por qué queda por debajo de las 518 ha oficiales (370 arbolado + 148 pasto)? Cruzando <strong>ΔHV</strong>
-          con <strong>ESA WorldCover 2021</strong> dentro del perímetro real comprobamos cómo responde cada cobertura a la
-          onda de 24 cm:
+          La diferencia restante hasta las 518 ha oficiales (o 483,1 ha ópticas con <code>dNBR ≥ 0,27</code>) responde a
+          un <strong>límite físico de la Banda L (24 cm)</strong>: según <strong>ESA WorldCover 2021</strong> (que en
+          Galicia agrupa monte bajo/tojo en la clase herbácea), NISAR detecta donde desaparece el matorral abierto,
+          mientras el fuego de superficie bajo copa arbolada deja intactos troncos y ramas gruesas (<code>ΔHV ≈ −0,07 dB</code>).
         </p>
 
         <table class="data-table">
           <thead>
-            <tr><th scope="col" data-i18n="c6ThCov">Cobertura (WorldCover)</th><th scope="col" class="num" data-i18n="c6ThArea">Área EFFIS</th><th scope="col" class="num" data-i18n="c6ThO1">ΔHV 01-oct (neto)</th><th scope="col" class="num" data-i18n="c6ThO25">ΔHV 25-oct (seco)</th><th scope="col" class="num" data-i18n="c6ThPct">% ≤−1,5 dB (25-oct)</th></tr>
+            <tr><th scope="col" data-i18n="c6ThCov">Cobertura (WorldCover)</th><th scope="col" class="num" data-i18n="c6ThArea">Área EFFIS</th><th scope="col" class="num" data-i18n="c6ThO1">ΔHV multitemp.</th><th scope="col" class="num" data-i18n="c6ThO25">NISAR (−1,5 dB)</th><th scope="col" class="num" data-i18n="c6ThPct">dNBR ≥ 0,27</th></tr>
           </thead>
           <tbody id="worldcover-tbody"></tbody>
         </table>
@@ -258,7 +266,7 @@
           </label>
           <input id="rain-slider" type="range" min="0" max="150" step="5" value="60" />
           <div class="mini-metrics" aria-live="polite">
-            <div class="mini-metric"><div class="k" data-i18n="c8M1">Escorrentía desde quemado (25-oct)</div><div class="v" id="rain-v-near">—</div></div>
+            <div class="mini-metric"><div class="k" data-i18n="c8M1">Escorrentía desde quemado (NISAR)</div><div class="v" id="rain-v-near">—</div></div>
             <div class="mini-metric"><div class="k" data-i18n="c8M2">Caudal acumulado cuenca (Salas/Limia)</div><div class="v" id="rain-v-main">—</div></div>
           </div>
           <div style="margin-top:1.35rem;font-size:0.88rem;font-weight:600" data-i18n="c8BarTitle">Candidatos a barreras de retención (rotura de pendiente)</div>
@@ -293,8 +301,9 @@
         <div class="step-num"><span data-i18n="c5Num">09 · Sensibilidad paramétrica ΔHV</span></div>
         <h2 data-i18n="c5Title">Distribución de severidad por umbrales en decibelios (ΔHV)</h2>
         <p data-i18n-html="c5P1">
-          No todo lo que arde pierde la misma estructura. Dividir <code>ΔHV = HV(01-oct) − HV(19-sep)</code> en umbrales
-          físicos de potencia devuelta permite distinguir afección moderada de pérdida severa del dosel:
+          Dividir el compuesto multitemporal <code>ΔHV</code> (5 pasadas secas previas → 13/25-oct) en umbrales físicos
+          de potencia devuelta permite distinguir afección moderada de pérdida estructural severa y compararlo con la
+          pasada húmeda del 1 de octubre:
         </p>
 
         <table class="data-table">
@@ -307,14 +316,15 @@
         <div class="control-box">
           <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.35rem" data-i18n="c5ModeLbl">Pasada / calibración aplicada en tabla y mapa:</div>
           <div class="pill-group" style="margin-bottom:0.55rem">
-            <button class="pill-btn active" type="button" data-dhb-mode="classes" data-i18n="c5Mode1">01-oct bruto (88,8 ha)</button>
-            <button class="pill-btn" type="button" data-dhb-mode="oct01_cal" data-i18n="c5Mode2">01-oct sin sesgo lluvia (221,0 ha)</button>
-            <button class="pill-btn" type="button" data-dhb-mode="oct25" data-i18n="c5Mode3">25-oct seco consolidado (373,6 ha)</button>
+            <button class="pill-btn active" type="button" data-dhb-mode="classes" data-i18n="c5Mode1">Multitemporal seco (324,9 ha)</button>
+            <button class="pill-btn" type="button" data-dhb-mode="oct01_wet" data-i18n="c5Mode6">Par 01-oct húmedo (87,5 ha)</button>
+            <button class="pill-btn" type="button" data-dhb-mode="oct01_cal" data-i18n="c5Mode2">01-oct sin sesgo lluvia (219 ha)</button>
+            <button class="pill-btn" type="button" data-dhb-mode="oct25" data-i18n="c5Mode3">Solo 25-oct seco (360,5 ha)</button>
             <button class="pill-btn" type="button" data-dhb-mode="threshold" data-i18n="c5Mode4">Umbral continuo en mapa</button>
             <button class="pill-btn" type="button" data-dhb-mode="continuous" data-i18n="c5Mode5">Rampa ΔHV</button>
           </div>
           <div class="human-tip plain" id="dhb-calibration-note" data-i18n-html="c5CalNote">
-            La pasada del <strong>1 de octubre</strong> registró un salto de humedad (SME2 0,18→0,23 m³/m³) que elevó el anillo de control en <strong>+1,22 dB</strong>. Descontando ese sesgo aparecen 221 ha; al secarse el suelo el <strong>25 de octubre</strong> emergen <strong>373,6 ha</strong> (≈ 370 ha arboladas oficiales).
+            La pasada del <strong>1 de octubre</strong> registró un salto de humedad (SME2 0,18→0,23 m³/m³) que elevó el anillo de control en <strong>+1,16 dB</strong>, ocultando parte del incendio. Al promediar en potencia lineal las pasadas secas con control de calidad, emergen <strong>324,9 ha</strong> estables (FP 0,16 %; F1 = 0,80 frente a dNBR).
           </div>
           <label for="db-slider">
             <span data-i18n="c5SliderLbl">Umbral ΔHV aplicado:</span>

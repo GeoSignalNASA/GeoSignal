@@ -191,6 +191,7 @@ def main():
     hv_smooth_stack = np.full((len(dates), h, w), np.nan, dtype=np.float32)
     hh_smooth_stack = np.full((len(dates), h, w), np.nan, dtype=np.float32)
     hv_raw_stack = np.full((len(dates), h, w), np.nan, dtype=np.float32)
+    hh_raw_stack = np.full((len(dates), h, w), np.nan, dtype=np.float32)
     sme2_stack = np.full((len(dates), h, w), np.nan, dtype=np.float32)
 
     qa_rows = []
@@ -214,12 +215,16 @@ def main():
             hv_pow = g["HVHV"][lr0:lr1, lc0:lc1]
             hh_pow = g["HHHH"][lr0:lr1, lc0:lc1]
 
-        hv_db_raw = to_db(hv_pow)
-        hh_db_raw = to_db(hh_pow)
-        hv_db = nan_aware_boxcar(hv_db_raw, SMOOTH_WINDOW)
-        hh_db = nan_aware_boxcar(hh_db_raw, SMOOTH_WINDOW)
+        hv_pow_valid = np.where(np.isfinite(hv_pow) & (hv_pow > 0), hv_pow, np.nan).astype(np.float32)
+        hh_pow_valid = np.where(np.isfinite(hh_pow) & (hh_pow > 0), hh_pow, np.nan).astype(np.float32)
+        hv_db_raw = to_db(hv_pow_valid)
+        hh_db_raw = to_db(hh_pow_valid)
+        # Multilook espacial en potencia lineal antes de pasar a dB (evita el sesgo geométrico de promediar logaritmos)
+        hv_db = to_db(nan_aware_boxcar(hv_pow_valid, SMOOTH_WINDOW))
+        hh_db = to_db(nan_aware_boxcar(hh_pow_valid, SMOOTH_WINDOW))
 
         hv_raw_stack[idx] = hv_db_raw
+        hh_raw_stack[idx] = hh_db_raw
         hv_smooth_stack[idx] = hv_db
         hh_smooth_stack[idx] = hh_db
 
@@ -277,6 +282,7 @@ def main():
         hv_smooth=hv_smooth_stack,
         hh_smooth=hh_smooth_stack,
         hv_raw=hv_raw_stack,
+        hh_raw=hh_raw_stack,
         sme2=sme2_stack,
         slope=slope_aoi,
         worldcover=worldcover_aoi,

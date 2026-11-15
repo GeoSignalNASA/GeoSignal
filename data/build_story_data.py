@@ -10,13 +10,16 @@ Todas las imágenes overlay se reproyectan a EPSG:3857 para alinear píxel a pí
 con MapLibre GL ImageSource.
 """
 
+import glob
 import json
 import os
 import sys
 
 import geopandas as gpd
+import h5py
 import numpy as np
 import rasterio
+import scipy.ndimage as ndi
 from PIL import Image
 from rasterio.transform import Affine, array_bounds
 from rasterio.warp import Resampling, reproject, transform_bounds
@@ -181,7 +184,65 @@ def fullframe_percentile_bounds(tif_path, negate=False):
     return float(lo), float(hi)
 
 
-def build_basins_and_sensitivity(assets_gdf, perim_gdf):
+def nan_aware_boxcar(arr, size=5):
+    """Media local en potencia lineal ignorando NaN."""
+    valid = np.isfinite(arr).astype(np.float64)
+    filled = np.where(np.isfinite(arr), arr, 0.0)
+    sum_valid = ndi.uniform_filter(filled, size=size, mode="constant", cval=0.0)
+    frac_valid = ndi.uniform_filter(valid, size=size, mode="constant", cval=0.0)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        return np.where(frac_valid > 0, sum_valid / frac_valid, np.nan)
+
+
+def select_mt_dates(qa_rows):
+    qa_pass = {q["date"] for q in qa_rows if q["qa_pass"]}
+    pre_dates = [q["date"] for q in qa_rows if "2026-07-01" <= q["date"] <= "2026-09-20" and q["date"] in qa_pass]
+    post_dates = [q["date"] for q in qa_rows if q["date"] > "2026-09-27" and q["date"] in qa_pass]
+    return pre_dates, post_dates
+
+
+def multitemporal_from_stack(raw_db_stack, dates, pre_dates, post_dates, ctrl_mask, smooth_size=5):
+    """Compuesto multitemporal en potencia lineal, multilook y calibración con zona de control."""
+    idx_map = {d: i for i, d in enumerate(dates)}
+    lin = np.power(10.0, raw_db_stack.astype(np.float64) / 10.0)
+    pre_lin = np.nanmean(lin[[idx_map[d] for d in pre_dates]], axis=0)
+    post_lin = np.nanmean(lin[[idx_map[d] for d in post_dates]], axis=0)
+    if smooth_size and smooth_size > 1:
+        pre_lin = nan_aware_boxcar(pre_lin, smooth_size)
+        post_lin = nan_aware_boxcar(post_lin, smooth_size)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        delta_uncal = 10.0 * np.log10(post_lin / pre_lin)
+    ctrl_offset = float(np.nanmean(delta_uncal[ctrl_mask]))
+    return (delta_uncal - ctrl_offset).astype(np.float32), ctrl_offset
+
+
+def multitemporal_dhv_window_from_h5(qa_rows, pre_dates, post_dates, r0, r1, c0, c1, ctrl_offset):
+    """Calcula ΔHV multitemporal lineal sobre la ventana completa de microcuencas."""
+    by_date = {q["date"]: os.path.join(RAW_DIR, q["gcov_file"]) for q in qa_rows}
+
+    def mean_lin(date_list):
+        acc = None
+        cnt = None
+        for dt in date_list:
+            with h5py.File(by_date[dt], "r") as f:
+                arr = f["/science/LSAR/GCOV/grids/frequencyA/HVHV"][r0:r1, c0:c1].astype(np.float64)
+            ok = np.isfinite(arr) & (arr > 0)
+            if acc is None:
+                acc = np.where(ok, arr, 0.0)
+                cnt = ok.astype(np.int32)
+            else:
+                acc += np.where(ok, arr, 0.0)
+                cnt += ok.astype(np.int32)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            return np.where(cnt > 0, acc / cnt, np.nan)
+
+    pre_lin = nan_aware_boxcar(mean_lin(pre_dates), 5)
+    post_lin = nan_aware_boxcar(mean_lin(post_dates), 5)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        return (10.0 * np.log10(post_lin / pre_lin) - ctrl_offset).astype(np.float32)
+
+
+def build_basins_and_sensitivity(assets_gdf, perim_gdf, qa_rows, pre_dates, post_dates, ctrl_offset):
     basins = gpd.read_file(os.path.join(RAW_DIR, "basins.geojson"))
     sev_path = os.path.join(OUT_DIR, "burn_severity.tif")
     slope_path = os.path.join(RAW_DIR, "slope.tif")
@@ -195,8 +256,11 @@ def build_basins_and_sensitivity(assets_gdf, perim_gdf):
         basins_proj = basins.to_crs(raster_crs)
         win = from_bounds(*basins_proj.total_bounds, transform=src.transform).round_offsets().round_lengths()
         win_tf = src.window_transform(win)
-        dhv_win = src.read(1, window=win)
-        mask_15 = src.read(2, window=win)
+        r0, c0 = int(win.row_off), int(win.col_off)
+        r1, c1 = r0 + int(win.height), c0 + int(win.width)
+
+    dhv_win = multitemporal_dhv_window_from_h5(qa_rows, pre_dates, post_dates, r0, r1, c0, c1, ctrl_offset)
+    mask_15 = (np.isfinite(dhv_win) & (dhv_win <= -1.5)).astype(np.float32)
 
     with rasterio.open(slope_path) as src:
         slope_win = src.read(1, window=win)
@@ -266,6 +330,7 @@ def main():
     hv_smooth = npz["hv_smooth"]
     hh_smooth = npz["hh_smooth"]
     hv_raw = npz["hv_raw"]
+    hh_raw = npz["hh_raw"] if "hh_raw" in npz.files else hh_smooth
     sme2 = npz["sme2"]
     wc = npz["worldcover"]
     fire_mask = npz["fire_mask"].astype(bool)
@@ -286,15 +351,27 @@ def main():
     dhv_oct25 = hv_smooth[idx_oct25] - hv_smooth[idx_pre]
     ctrl_offset_oct25 = float(np.nanmean(dhv_oct25[ctrl_mask]))
 
-    # Línea base robusta: mediana de pasadas pre-incendio QA-pass (ago-sep)
+    # Compuesto multitemporal en potencia lineal (solo pasadas QA-pass, sin sesgo de lluvia)
+    mt_pre_dates, mt_post_dates = select_mt_dates(manifest["qa"])
+    dhv_mt, mt_ctrl_offset = multitemporal_from_stack(
+        hv_raw, dates, mt_pre_dates, mt_post_dates, ctrl_mask, smooth_size=5
+    )
+    dhv_mt_raw, _ = multitemporal_from_stack(
+        hv_raw, dates, mt_pre_dates, mt_post_dates, ctrl_mask, smooth_size=1
+    )
+    dhh_mt, _ = multitemporal_from_stack(
+        hh_raw, dates, mt_pre_dates, mt_post_dates, ctrl_mask, smooth_size=5
+    )
+
+    # Línea base robusta con 01-oct (mediana ago-sep vs 01-oct)
     qa_pass_dates = {q["date"] for q in manifest["qa"] if q["qa_pass"]}
     pre_indices = [i for i, d in enumerate(dates) if "2026-08-01" <= d <= "2026-09-20" and d in qa_pass_dates]
     hv_pre_med = np.nanmedian(hv_smooth[pre_indices], axis=0)
     dhv_robust = hv_smooth[idx_post] - hv_pre_med
 
-    # 1. Clases de dB dentro del perímetro EFFIS (y versión 20m cruda para explicar 239 vs 89 ha)
-    valid_fire = fire_mask & np.isfinite(dhv)
-    valid_ctrl = ctrl_mask & np.isfinite(dhv)
+    # 1. Clases de dB dentro del perímetro EFFIS
+    valid_fire = fire_mask & np.isfinite(dhv_mt)
+    valid_ctrl = ctrl_mask & np.isfinite(dhv_mt)
     expected_fire_px = int(fire_mask.sum())
     valid_fire_px = int(valid_fire.sum())
 
@@ -315,56 +392,72 @@ def main():
             "burned_total_ha": round((c1 + c2 + c3) * px_ha, 2),
         }
 
+    classes_mt = class_counts(dhv_mt, fire_mask)
+    classes_mt.update({
+        "pre_dates": mt_pre_dates,
+        "post_dates": mt_post_dates,
+        "ctrl_offset_db": round(mt_ctrl_offset, 4),
+        "fp_ctrl_pct": round(float((dhv_mt[valid_ctrl] <= -1.5).mean()) * 100.0, 2),
+    })
     classes_smooth = class_counts(dhv, fire_mask)
+    classes_smooth["wet_pass"] = True
     classes_raw = class_counts(dhv_raw, fire_mask)
+    classes_raw["wet_pass"] = True
+    classes_mt_raw = class_counts(dhv_mt_raw, fire_mask)
     classes_robust = class_counts(dhv_robust, fire_mask)
     classes_oct01_cal = class_counts(dhv_oct01_cal, fire_mask)
     classes_oct25 = class_counts(dhv_oct25, fire_mask)
 
-    # 2. Curva hectáreas vs umbral (-0.5 a -8.0 dB, paso 0.25) + tasa de falsos positivos en control
+    # 2. Curva hectáreas vs umbral (-0.5 a -8.0 dB, paso 0.25) sobre compuesto multitemporal (5x5 vs 1x1)
     thresholds = [round(-0.5 - 0.25 * k, 2) for k in range(31)]
     curve = []
-    fire_vals_smooth = dhv[valid_fire]
-    ctrl_vals_smooth = dhv[valid_ctrl]
-    fire_vals_raw = dhv_raw[fire_mask & np.isfinite(dhv_raw)]
-    ctrl_vals_raw = dhv_raw[ctrl_mask & np.isfinite(dhv_raw)]
+    fire_vals_mt = dhv_mt[valid_fire]
+    ctrl_vals_mt = dhv_mt[valid_ctrl]
+    fire_vals_raw = dhv_mt_raw[fire_mask & np.isfinite(dhv_mt_raw)]
+    ctrl_vals_raw = dhv_mt_raw[ctrl_mask & np.isfinite(dhv_mt_raw)]
     for th in thresholds:
-        ha_s = round(float((fire_vals_smooth <= th).sum()) * px_ha, 2)
-        fp_s = round(float((ctrl_vals_smooth <= th).mean()) * 100.0, 2)
+        ha_s = round(float((fire_vals_mt <= th).sum()) * px_ha, 2)
+        fp_s = round(float((ctrl_vals_mt <= th).mean()) * 100.0, 2)
         ha_r = round(float((fire_vals_raw <= th).sum()) * px_ha, 2)
         fp_r = round(float((ctrl_vals_raw <= th).mean()) * 100.0, 2)
         curve.append({"threshold_db": th, "ha_smooth": ha_s, "fp_ctrl_pct_smooth": fp_s, "ha_raw": ha_r, "fp_ctrl_pct_raw": fp_r})
 
-    # 3. Histograma ΔHV dentro del perímetro vs control
+    # 3. Histograma ΔHV multitemporal dentro del perímetro vs control
     bins = np.linspace(-10.0, 4.0, 29)  # paso 0.5 dB
-    hist_fire, _ = np.histogram(fire_vals_smooth, bins=bins, density=True)
-    hist_ctrl, _ = np.histogram(ctrl_vals_smooth, bins=bins, density=True)
+    hist_fire, _ = np.histogram(fire_vals_mt, bins=bins, density=True)
+    hist_ctrl, _ = np.histogram(ctrl_vals_mt, bins=bins, density=True)
     histogram = [
         {"bin_center": round(float((bins[i] + bins[i + 1]) / 2), 2), "fire_density": round(float(hist_fire[i]), 4), "ctrl_density": round(float(hist_ctrl[i]), 4)}
         for i in range(len(bins) - 1)
     ]
 
-    # 4. Comparativa HH vs HV (pregunta obligatoria 2)
+    # 4. Comparativa HH vs HV (par 01-oct, 25-oct y multitemporal)
+    fire_vals_oct01 = dhv[fire_mask & np.isfinite(dhv)]
+    ctrl_vals_oct01 = dhv[ctrl_mask & np.isfinite(dhv)]
     dhh_fire = dhh[fire_mask & np.isfinite(dhh)]
     dhh_ctrl = dhh[ctrl_mask & np.isfinite(dhh)]
+    dhh_mt_fire = dhh_mt[fire_mask & np.isfinite(dhh_mt)]
     dhv25_fire = dhv_oct25[fire_mask & np.isfinite(dhv_oct25)]
     dhv25_ctrl = dhv_oct25[ctrl_mask & np.isfinite(dhv_oct25)]
     pol_stats = {
-        "hv_fire_mean_db": round(float(np.mean(fire_vals_smooth)), 3),
-        "hv_fire_net_db": round(float(np.mean(fire_vals_smooth) - ctrl_offset_oct01), 3),
-        "hv_fire_p10_db": round(float(np.percentile(fire_vals_smooth, 10)), 3),
-        "hv_ctrl_mean_db": round(float(np.mean(ctrl_vals_smooth)), 3),
+        "hv_fire_mean_db": round(float(np.mean(fire_vals_oct01)), 3),
+        "hv_fire_net_db": round(float(np.mean(fire_vals_oct01) - ctrl_offset_oct01), 3),
+        "hv_fire_p10_db": round(float(np.percentile(fire_vals_oct01, 10)), 3),
+        "hv_ctrl_mean_db": round(float(np.mean(ctrl_vals_oct01)), 3),
         "hh_fire_mean_db": round(float(np.mean(dhh_fire)), 3),
         "hh_fire_net_db": round(float(np.mean(dhh_fire) - np.mean(dhh_ctrl)), 3),
         "hh_fire_p90_db": round(float(np.percentile(dhh_fire, 90)), 3),
         "hh_ctrl_mean_db": round(float(np.mean(dhh_ctrl)), 3),
-        "hv_separation_db": round(float(np.mean(ctrl_vals_smooth) - np.mean(fire_vals_smooth)), 3),
+        "hv_separation_db": round(float(np.mean(ctrl_vals_oct01) - np.mean(fire_vals_oct01)), 3),
         "hh_separation_db": round(float(np.mean(dhh_ctrl) - np.mean(dhh_fire)), 3),
         "hh_double_bounce_pct_fire": round(float((dhh_fire >= 1.0).mean()) * 100.0, 2),
         "ctrl_offset_oct01_db": round(ctrl_offset_oct01, 3),
         "ctrl_offset_oct25_db": round(ctrl_offset_oct25, 3),
         "hv_oct25_fire_mean_db": round(float(np.mean(dhv25_fire)), 3),
         "hv_oct25_ctrl_mean_db": round(float(np.mean(dhv25_ctrl)), 3),
+        "hv_mt_fire_mean_db": round(float(np.mean(fire_vals_mt)), 3),
+        "hv_mt_p10_db": round(float(np.percentile(fire_vals_mt, 10)), 3),
+        "hh_mt_fire_mean_db": round(float(np.mean(dhh_mt_fire)), 3),
     }
 
     # 5. Serie temporal de 10 pasadas (perímetro EFFIS vs control + SME2)
@@ -401,6 +494,7 @@ def main():
             continue
         vals = dhv[m]
         vals25 = dhv_oct25[m]
+        vals_mt = dhv_mt[m]
         landcover.append(
             {
                 "code": code,
@@ -410,9 +504,12 @@ def main():
                 "dhv_mean_db": round(float(np.mean(vals)), 3),
                 "dhv_net_oct01_db": round(float(np.mean(vals) - ctrl_offset_oct01), 3),
                 "dhv_oct25_mean_db": round(float(np.nanmean(vals25)), 3),
+                "dhv_mt_mean_db": round(float(np.nanmean(vals_mt)), 3),
                 "burned_ha_15db": round(float((vals <= -1.5).sum()) * px_ha, 2),
                 "burned_pct_15db": round(float((vals <= -1.5).mean()) * 100.0, 1),
                 "burned_pct_oct25_15db": round(float((vals25 <= -1.5).mean()) * 100.0, 1),
+                "burned_ha_mt_15db": round(float((vals_mt <= -1.5).sum()) * px_ha, 2),
+                "burned_pct_mt_15db": round(float((vals_mt <= -1.5).mean()) * 100.0, 1),
             }
         )
 
@@ -421,18 +518,20 @@ def main():
     layers_to_export = [
         ("hv_pre.png", hv_smooth[idx_pre], render_hv_grayscale, 540),
         ("hv_post.png", hv_smooth[idx_post], render_hv_grayscale, 540),
+        ("dhv_mt.png", dhv_mt, render_dhv_classes, 680),
         ("dhv_classes.png", dhv, render_dhv_classes, 680),
         ("dhv_oct01_cal.png", dhv_oct01_cal, render_dhv_classes, 680),
         ("dhv_oct25.png", dhv_oct25, render_dhv_classes, 680),
-        ("dhv_cont.png", dhv, render_dhv_continuous, 680),
+        ("dhv_cont.png", dhv_mt, render_dhv_continuous, 680),
         ("dhh.png", dhh, render_dhh_diverging, 540),
     ]
     dnbr_stats = None
+    validation_dnbr = None
     dnbr_path = os.path.join(OUT_DIR, "s2_dnbr.tif")
     if os.path.exists(dnbr_path):
         with rasterio.open(dnbr_path) as dsrc:
             dnbr_arr = dsrc.read(1)
-        val_dnbr = fire_mask & np.isfinite(dnbr_arr) & np.isfinite(dhv_oct25)
+        val_dnbr = fire_mask & np.isfinite(dnbr_arr) & np.isfinite(dhv_oct25) & np.isfinite(dhv_mt)
         dnbr_vals = dnbr_arr[val_dnbr]
         dnbr_stats = {
             "pre_scene": "2026-09-20",
@@ -443,16 +542,64 @@ def main():
             "burned_high_ha": round(float((dnbr_vals >= 0.44).sum()) * px_ha, 2),
             "pearson_r_vs_dhv_oct25": round(float(np.corrcoef(dnbr_vals, dhv_oct25[val_dnbr])[0, 1]), 3),
             "pearson_r_vs_dhv_oct01": round(float(np.corrcoef(dnbr_vals, dhv[val_dnbr])[0, 1]), 3),
+            "pearson_r_vs_dhv_mt": round(float(np.corrcoef(dnbr_vals, dhv_mt[val_dnbr])[0, 1]), 3),
+        }
+        opt_mod = val_dnbr & (dnbr_arr >= 0.27)
+        sar_mt = val_dnbr & (dhv_mt <= -1.5)
+        tp = int((opt_mod & sar_mt).sum())
+        prec = tp / max(int(sar_mt.sum()), 1)
+        rec = tp / max(int(opt_mod.sum()), 1)
+        f1 = (2.0 * prec * rec / (prec + rec)) if (prec + rec) > 0 else 0.0
+        om = opt_mod & (~sar_mt)
+        wc_val = []
+        for code, name in WORLDCOVER_LABELS.items():
+            m_wc = val_dnbr & (wc == code)
+            if int(m_wc.sum()) < 25:
+                continue
+            om_wc = om & m_wc
+            wc_val.append({
+                "code": code,
+                "name": name,
+                "area_ha": round(int(m_wc.sum()) * px_ha, 2),
+                "dnbr_mod_high_ha": round(int((opt_mod & m_wc).sum()) * px_ha, 2),
+                "sar_mt_ha": round(int((sar_mt & m_wc).sum()) * px_ha, 2),
+                "both_ha": round(int((opt_mod & sar_mt & m_wc).sum()) * px_ha, 2),
+                "omission_ha": round(int(om_wc.sum()) * px_ha, 2),
+                "dhv_omission_mean_db": round(float(np.nanmean(dhv_mt[om_wc])), 3) if om_wc.any() else None,
+            })
+        bin_val = []
+        for lo, hi, lbl in [(0.10, 0.27, "Baja (0.10-0.27)"), (0.27, 0.44, "Mod-Baja (0.27-0.44)"), (0.44, 0.66, "Mod-Alta (0.44-0.66)"), (0.66, 5.0, "Alta (>=0.66)")]:
+            bm = val_dnbr & (dnbr_arr >= lo) & (dnbr_arr < hi)
+            if bm.any():
+                bin_val.append({
+                    "bin": lbl,
+                    "ha": round(int(bm.sum()) * px_ha, 2),
+                    "detected_pct": round(float(sar_mt[bm].mean()) * 100.0, 1),
+                })
+        validation_dnbr = {
+            "ref_threshold_dnbr": 0.27,
+            "ref_mod_high_ha": round(int(opt_mod.sum()) * px_ha, 2),
+            "sar_mt_ha": round(int(sar_mt.sum()) * px_ha, 2),
+            "tp_ha": round(tp * px_ha, 2),
+            "omission_ha": round(int(om.sum()) * px_ha, 2),
+            "commission_ha": round(int((sar_mt & (~opt_mod)).sum()) * px_ha, 2),
+            "precision": round(prec, 3),
+            "recall": round(rec, 3),
+            "f1": round(f1, 3),
+            "dhv_omission_mean_db": round(float(np.nanmean(dhv_mt[om])), 3) if om.any() else None,
+            "by_worldcover": wc_val,
+            "by_dnbr_bin": bin_val,
         }
         layers_to_export.append(("dnbr_s2.png", dnbr_arr, render_dnbr_classes, 680))
 
     overlay_labels = {
         "hv_pre.png": "NISAR Banda L · HV pre (19-sep)",
         "hv_post.png": "NISAR Banda L · HV post (01-oct)",
+        "dhv_mt.png": "NISAR Banda L · Severidad multitemporal ΔHV (jul–oct)",
         "dhv_classes.png": "NISAR Banda L · Severidad ΔHV (01-oct)",
         "dhv_oct01_cal.png": "NISAR Banda L · ΔHV 01-oct sin sesgo",
         "dhv_oct25.png": "NISAR Banda L · Severidad ΔHV (25-oct seco)",
-        "dhv_cont.png": "NISAR Banda L · ΔHV continuo",
+        "dhv_cont.png": "NISAR Banda L · ΔHV multitemporal continuo",
         "dhh.png": "NISAR Banda L · ΔHH (doble rebote)",
         "dnbr_s2.png": "Sentinel-2 dNBR (20-sep → 15-oct)",
     }
@@ -466,8 +613,8 @@ def main():
             meta_entry["label"] = overlay_labels[fname]
         overlays_meta[fname] = meta_entry
 
-    # Cuantización 8-bit de ΔHV para filtrado instantáneo por umbral en canvas del navegador
-    dhv_merc, dhv_corners = reproject_to_3857(dhv, aoi_tf, src_crs, out_w=520)
+    # Cuantización 8-bit de ΔHV multitemporal para filtrado instantáneo por umbral en canvas
+    dhv_merc, dhv_corners = reproject_to_3857(dhv_mt, aoi_tf, src_crs, out_w=520)
     q8 = encode_dhv_q8(dhv_merc)
     q8_path = os.path.join(OVERLAYS_DIR, "dhv_q8.png")
     Image.fromarray(q8, mode="L").save(q8_path, format="PNG", optimize=True)
@@ -514,7 +661,9 @@ def main():
         barriers_gdf["relevant"] = barriers_gdf["dist_from_fire_m"].astype(float) < 3000.0
         barriers_gdf.to_file(os.path.join(ASSETS_DATA_DIR, "barrier_candidates.geojson"), driver="GeoJSON")
 
-    basins_summary, assets_by_basin = build_basins_and_sensitivity(assets_gdf, perim_gdf)
+    basins_summary, assets_by_basin = build_basins_and_sensitivity(
+        assets_gdf, perim_gdf, manifest["qa"], mt_pre_dates, mt_post_dates, mt_ctrl_offset
+    )
 
     stats = {
         "meta": {
@@ -525,6 +674,8 @@ def main():
             "track_frame": "Track 15 / Frame 23 (ascendente)",
             "pre_date": "2026-09-19",
             "post_date": "2026-10-01",
+            "mt_pre_dates": mt_pre_dates,
+            "mt_post_dates": mt_post_dates,
             "official_xunta_ha": 518,
             "official_forest_ha": 370,
             "official_grass_ha": 148,
@@ -532,6 +683,8 @@ def main():
             "effis_fire_id": 15925129,
             "valid_coverage_pct": round(valid_fire_px / expected_fire_px * 100.0, 2),
         },
+        "severity_multitemporal": classes_mt,
+        "severity_multitemporal_raw": classes_mt_raw,
         "severity_smooth": classes_smooth,
         "severity_raw_20m": classes_raw,
         "severity_robust_baseline": classes_robust,
@@ -543,6 +696,7 @@ def main():
         "timeseries": timeseries,
         "landcover_2021": landcover,
         "optical_dnbr": dnbr_stats,
+        "validation_dnbr": validation_dnbr,
         "basins_summary": basins_summary,
         "assets_by_basin": {str(k): v for k, v in assets_by_basin.items()},
         "qa": manifest["qa"],

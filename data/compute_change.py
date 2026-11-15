@@ -2,11 +2,10 @@
 Pre/post HV backscatter diff from two NISAR GCOV granules -> burn severity
 GeoTIFF.
 
-HDF5 paths below match the NISAR GCOV product spec as of the Earthdata
-docs linked in the deck. VERIFY against the actual files once downloaded --
-product builds have moved group paths before (e.g. frequencyA vs frequencyB,
-extra polarimetric terms). Run `h5py.File(path).visit(print)` on one
-granule if `HVHV` isn't where this expects it.
+NOTA: herramienta legacy para una pareja suelta sobre el frame completo. La web
+y el StoryMap actuales no usan su máscara, sino el compuesto multitemporal en
+potencia lineal con pasadas secas (QA-pass) que generan extract_aoi_stack.py y
+build_story_data.py (evitando el sesgo de lluvia del 01-oct y el suavizado en dB).
 """
 
 import sys

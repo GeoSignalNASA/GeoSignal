@@ -52,11 +52,26 @@ def main():
         if row["valid_pct_perimeter"] < 99.0:
             errors.append(f"Cobertura insuficiente en {row['date']}: {row['valid_pct_perimeter']}%")
 
-    # 2. Conservación de área en clases dB
+    # 2. Conservación de área en clases dB (multitemporal principal y par 01-oct)
+    sm = stats["severity_multitemporal"]
     sv = stats["severity_smooth"]
-    sum_classes = sum(c["ha"] for c in sv["classes"])
-    if abs(sum_classes - sv["total_valid_ha"]) > 1.0:
-        errors.append(f"La suma de clases ({sum_classes}) != área válida ({sv['total_valid_ha']})")
+    for label_k, block in (("severity_multitemporal", sm), ("severity_smooth", sv)):
+        sum_classes = sum(c["ha"] for c in block["classes"])
+        if abs(sum_classes - block["total_valid_ha"]) > 1.0:
+            errors.append(f"La suma de clases en {label_k} ({sum_classes}) != área válida ({block['total_valid_ha']})")
+
+    # 2b. Auditoría del compuesto multitemporal (solo pasadas QA-pass, sesgo <= 0.5 dB, F1 >= 0.6 vs dNBR)
+    qa_pass_dates = {row["date"] for row in qa if row["qa_pass"]}
+    for dt in sm.get("post_dates", []):
+        if dt not in qa_pass_dates:
+            errors.append(f"Pasada post multitemporal sin QA-pass: {dt}")
+    if not sm.get("post_dates"):
+        errors.append("severity_multitemporal no tiene post_dates")
+    if abs(sm.get("ctrl_offset_db", 0.0)) > 0.5:
+        errors.append(f"Desplazamiento de control excesivo en multitemporal: {sm.get('ctrl_offset_db')} dB")
+    val_dnbr = stats.get("validation_dnbr")
+    if val_dnbr and val_dnbr.get("f1", 0.0) < 0.6:
+        errors.append(f"F1 frente a Sentinel-2 dNBR demasiado bajo: {val_dnbr.get('f1')}")
 
     # 3. Monotonía de curva hectáreas vs umbral (threshold va de -0.5 a -8.0)
     curve = stats["threshold_curve"]
@@ -71,7 +86,17 @@ def main():
         errors.append(f"Se esperaba top-2 {{8, 9}}, obtenido {top2}")
 
     # 5. Claves obligatorias para la web y existencia de overlays
-    for key in ("meta", "severity_smooth", "severity_raw_20m", "threshold_curve", "histogram", "polarizations", "timeseries", "basins_summary"):
+    for key in (
+        "meta",
+        "severity_multitemporal",
+        "severity_smooth",
+        "severity_raw_20m",
+        "threshold_curve",
+        "histogram",
+        "polarizations",
+        "timeseries",
+        "basins_summary",
+    ):
         if key not in stats:
             errors.append(f"Falta clave en story_stats.json: {key}")
 
@@ -92,10 +117,11 @@ def main():
             print(" -", e)
         sys.exit(1)
 
+    f1_str = f", F1={val_dnbr['f1']}" if val_dnbr else ""
     print(
-        f"VALIDATION OK: {len(qa)} fechas NISAR, {sv['burned_total_ha']} ha quemadas (-1.5 dB suavizado) / "
-        f"{stats['severity_raw_20m']['burned_total_ha']} ha (20m raw), top-2 cuencas {sorted(top2)}, "
-        f"peso assets = {total_bytes / 1024:.1f} KB"
+        f"VALIDATION OK: {len(qa)} fechas NISAR, {sm['burned_total_ha']} ha multitemporal "
+        f"(FP={sm['fp_ctrl_pct']}%{f1_str}) vs {sv['burned_total_ha']} ha par 01-oct, "
+        f"top-2 cuencas {sorted(top2)}, peso assets = {total_bytes / 1024:.1f} KB"
     )
 
 

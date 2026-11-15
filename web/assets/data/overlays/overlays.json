@@ -43,6 +43,28 @@
     ],
     "label": "NISAR Banda L · HV post (01-oct)"
   },
+  "dhv_mt.png": {
+    "url": "assets/data/overlays/dhv_mt.png",
+    "coordinates": [
+      [
+        -7.977378,
+        41.986901
+      ],
+      [
+        -7.782076,
+        41.986901
+      ],
+      [
+        -7.782076,
+        41.833196
+      ],
+      [
+        -7.977378,
+        41.833196
+      ]
+    ],
+    "label": "NISAR Banda L · Severidad multitemporal ΔHV (jul–oct)"
+  },
   "dhv_classes.png": {
     "url": "assets/data/overlays/dhv_classes.png",
     "coordinates": [
@@ -129,7 +151,7 @@
         41.833196
       ]
     ],
-    "label": "NISAR Banda L · ΔHV continuo"
+    "label": "NISAR Banda L · ΔHV multitemporal continuo"
   },
   "dhh.png": {
     "url": "assets/data/overlays/dhh.png",

@@ -66,7 +66,7 @@ class TerritoryTest(unittest.TestCase):
     def test_inputs_match_the_storymap(self):
         t = self.territory
         self.assertEqual(len(t.basins), 26)
-        self.assertAlmostEqual(t.burned_ha, 373.64)
+        self.assertAlmostEqual(t.burned_ha, 324.88)
         self.assertEqual([b.basin_id for b in t.basins_by_rank()[:2]], [9, 8])
 
     def test_place_exposure(self):
@@ -79,9 +79,9 @@ class TerritoryTest(unittest.TestCase):
         self.assertIsNone(t.find_place("Madrid"))
 
     def test_runoff_matches_web_simulator(self):
-        # Chapter 07 of the StoryMap shows 269.021 m3 at 120 mm.
+        # Chapter 07 of the StoryMap shows 233,914 m3 at 120 mm (324.88 ha multitemporal).
         a = engine.assess(self.territory, forecast.scenario(120), simulated=True)
-        self.assertEqual(round(a.runoff_burned_m3), 269021)
+        self.assertEqual(round(a.runoff_burned_m3), 233914)
         self.assertEqual(a.level, 3)
 
     def test_pool_comparison_is_rounded(self):
@@ -169,12 +169,12 @@ class ReportTest(unittest.TestCase):
         self.assertEqual(subject, "[GeoSignal] Informe del estudio del incendio de Calvos de Randín: qué se quemó y por dónde puede bajar el agua")
         for expected in (
             "24–27 de septiembre de 2026",
-            "518 ha", "1.234 ha", "88,8 ha", "374 ha", "483 ha",       # every source of burned area
-            "coincidencia de 0,77 sobre 1",
+            "518 ha", "1.234 ha", "87,5 ha", "325 ha", "483 ha",       # every source of burned area
+            "coincidencia de 0,74 sobre 1",
             "pasto y herbáceas (49 %) y arbolado (47 %)",
             "Cuenca de As Meaus, Rubiás y Santiago de Rubiás",
             "As Meaus: exposición alta",
-            "como unas 35 piscinas olímpicas",                           # 40 l/m2 in the rain simulator
+            "como unas 30 piscinas olímpicas",                           # 40 l/m2 in the rain simulator (324.88 ha)
             "el lugar más cercano es As Meaus",
             "8 de las 10 pasadas",
             "112",
@@ -200,8 +200,8 @@ class ReportTest(unittest.TestCase):
         sub = subscribers.Subscriber("t@b.org", lang="en", profile="technical", places=["Randín"])
         subject, text, _ = report.build_report(self.territory, sub, SETTINGS)
         self.assertEqual(subject, "[GeoSignal] Study report on the Calvos de Randín wildfire: what burned and where water can run")
-        for expected in ("September 24–27, 2026", "1,234 ha", "Randín: medium exposure", "about 35 Olympic swimming pools",
-                         "Technical detail", "-1.5 dB", "r = -0.77", "89,674 m³", "(priority)"):
+        for expected in ("September 24–27, 2026", "1,234 ha", "Randín: medium exposure", "about 30 Olympic swimming pools",
+                         "Technical detail", "-1.5 dB", "r = -0.74", "77,971 m³", "(priority)"):
             self.assertIn(expected, text)
 
 
@@ -359,7 +359,7 @@ class ComposeAndSendTest(unittest.TestCase):
         self.assertIn("unos 62 litros por metro cuadrado", text)
         self.assertIn("Lo más intenso llegará hacia las 16:00", text)
         self.assertIn("El incendio de septiembre", text)
-        self.assertIn("unas 55 piscinas olímpicas", text)  # 138.994 m3 / 2.500 m3, rounded
+        self.assertIn("unas 50 piscinas olímpicas", text)  # 120.855 m3 / 2.500 m3, rounded
         self.assertIn("As Meaus: exposición alta", text)
         self.assertIn("pasa a unos 300 m", text)
         self.assertIn("Baltar: exposición baja", text)
@@ -376,7 +376,7 @@ class ComposeAndSendTest(unittest.TestCase):
         subject, text, _ = compose.build_email(self.assessment, self.territory, sub, SETTINGS)
         self.assertIn("Orange alert: heavy rain on Tuesday 17", subject)
         self.assertIn("Tuesday, November 17", text)
-        self.assertIn("138,994 m³", text)
+        self.assertIn("120,855 m³", text)
         self.assertIn("Technical detail", text)
         self.assertIn("#9", text)
         self.assertIn("(priority)", text)

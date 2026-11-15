@@ -44,13 +44,13 @@ AOI_WKT = (
 #   track 124 / frame 67 (descending): pre 2026-09-14, post 2026-10-20
 #
 # track 15/23 covers 99.9% of the real EFFIS perimeter (see EFFIS_PERIMETER
-# below) -- tested 2026-11-14. Burn severity from this pair: 19.4% of valid
-# pixels below HV_BURN_THRESHOLD_DB, ~239 ha. For comparison: Xunta press
-# figure is 518 ha (370 forest + 148 grassland), EFFIS NRT auto-detection
-# says 1234 ha. Our number is lower than both, plausibly because the HV
-# drop is a canopy-structure signal that shows up much more on the forested
-# fraction than on burned grassland -- frame this as "severe-burn core in
-# forest," not "total burned area," when presenting it.
+# below) -- tested 2026-11-14.
+# Nota de hallazgo (2026-11-15): usar solo el par 2026-09-19 -> 2026-10-01 daba
+# ~239 ha crudas / ~88 ha suavizadas porque el 01-oct coincidió con suelo mojado
+# (SME2 0.18->0.23, offset +1.16 dB en control). Con compuesto multitemporal lineal
+# de pasadas secas QA-pass (5 pre jul-sep vs 13-oct + 25-oct) y umbral -1.5 dB se
+# detectan ~325 ha (F1 = 0.80 vs Sentinel-2 dNBR >= 0.27); el resto hasta 483-518 ha
+# corresponde a quema superficial bajo copa sin cambio estructural en banda L.
 PREFERRED_TRACK_FRAME = (15, 23)
 
 # Real fire perimeter from EFFIS's NRT burnt-area WFS

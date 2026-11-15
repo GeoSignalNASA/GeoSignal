@@ -15,10 +15,11 @@ const MAX_ZOOM = 15.0;
 const OVERLAY_LABELS = {
   "hv_pre.png": "NISAR Banda L · HV pre (19-sep)",
   "hv_post.png": "NISAR Banda L · HV post (01-oct)",
+  "dhv_mt.png": "NISAR Banda L · Severidad multitemporal ΔHV (jul–oct)",
   "dhv_classes.png": "NISAR Banda L · Severidad ΔHV (01-oct)",
   "dhv_oct01_cal.png": "NISAR Banda L · ΔHV 01-oct sin sesgo",
   "dhv_oct25.png": "NISAR Banda L · Severidad ΔHV (25-oct seco)",
-  "dhv_cont.png": "NISAR Banda L · ΔHV continuo",
+  "dhv_cont.png": "NISAR Banda L · ΔHV multitemporal continuo",
   "dhh.png": "NISAR Banda L · ΔHH (doble rebote)",
   "dnbr_s2.png": "Sentinel-2 dNBR (20-sep → 15-oct)",
   "optical_fire.jpg": "Sentinel-2 L2A 2026-09-25 (incendio activo)",
@@ -47,10 +48,10 @@ let activeSeriesDate = "2026-10-01";
 let activeDbThreshold = -1.5;
 let activeBasinThreshold = "risk_mean";
 let activeRainMm = 60;
-let activeDhbMode = "classes"; // "classes" | "oct01_cal" | "oct25" | "threshold" | "continuous"
+let activeDhbMode = "classes"; // "classes" (multitemporal) | "oct01_wet" | "oct01_cal" | "oct25" | "threshold" | "continuous"
 let activeCap2HvKey = "hv_pre.png";
 let activeOptKey = "optical_fire.jpg";
-let activeRadKey = "dhv_classes.png";
+let activeRadKey = "dhv_mt.png";
 let assetMarkers = [];
 let assetMarkersVisible = true;
 let selectedBarrierIdx = -1;
@@ -397,7 +398,7 @@ function initCompareMaps() {
   });
 
   afterMap.on("load", () => {
-    const hv = OVERLAYS[activeRadKey] || OVERLAYS["dhv_classes.png"];
+    const hv = OVERLAYS[activeRadKey] || OVERLAYS["dhv_mt.png"] || OVERLAYS["dhv_classes.png"];
     if (hv) {
       afterMap.addSource("rad-src", { type: "image", url: hv.url, coordinates: hv.coordinates });
       afterMap.addLayer({ id: "rad-lyr", type: "raster", source: "rad-src", paint: { "raster-opacity": 0.94 } });
@@ -488,7 +489,11 @@ function updateRainMapLayer(rainMm) {
     ]);
   }
 
-  const burnedHa = STATS?.severity_oct25?.burned_total_ha || STATS?.severity_smooth?.burned_total_ha || 0;
+  const burnedHa =
+    STATS?.severity_multitemporal?.burned_total_ha ||
+    STATS?.severity_oct25?.burned_total_ha ||
+    STATS?.severity_smooth?.burned_total_ha ||
+    0;
   const vBurned = burnedHa * 10000 * (rainMm / 1000) * RUNOFF_COEFF;
   const vMain = maxArea * (rainMm / 1000) * RUNOFF_COEFF;
   document.getElementById("rain-v-near").textContent = `${fmtEs(vBurned)} m³`;
@@ -758,13 +763,22 @@ function initToc() {
 
 function applyDhbMode(mode, updateMap = true) {
   activeDhbMode = mode;
+  const mt = STATS.severity_multitemporal || STATS.severity_smooth;
+  const d = I18N[activeLang].dynamic;
   if (mode === "classes") {
-    if (updateMap) updateRasterOverlay("dhv_classes.png");
-    renderSeverityTable(STATS.severity_smooth);
+    if (updateMap) updateRasterOverlay("dhv_mt.png");
+    renderSeverityTable(mt);
     updateThresholdReadout(activeDbThreshold);
+  } else if (mode === "oct01_wet") {
+    const wet = STATS.severity_smooth;
+    if (updateMap) updateRasterOverlay("dhv_classes.png");
+    renderSeverityTable(wet);
+    document.getElementById("db-ha-smooth").textContent = `${fmtEs(wet.burned_total_ha, 1)} ha`;
+    document.getElementById("db-ha-raw").textContent = `${fmtEs(STATS.severity_raw_20m.burned_total_ha, 1)} ha ${d.oct01WetSuffix}`;
+    document.getElementById("db-fp-rate").textContent = d.oct01WetFp;
+    document.getElementById("db-energy-loss").textContent = "29% (−1,5 dB)";
   } else if (mode === "oct01_cal") {
     const cal = STATS.severity_oct01_calibrated || STATS.severity_smooth;
-    const d = I18N[activeLang].dynamic;
     if (updateMap) updateRasterOverlay("dhv_oct01_cal.png");
     renderSeverityTable(cal);
     document.getElementById("db-ha-smooth").textContent = `${fmtEs(cal.burned_total_ha, 1)} ha`;
@@ -773,7 +787,6 @@ function applyDhbMode(mode, updateMap = true) {
     document.getElementById("db-energy-loss").textContent = "29% (−1,5 dB)";
   } else if (mode === "oct25") {
     const oct25 = STATS.severity_oct25 || STATS.severity_smooth;
-    const d = I18N[activeLang].dynamic;
     if (updateMap) updateRasterOverlay("dhv_oct25.png");
     renderSeverityTable(oct25);
     document.getElementById("db-ha-smooth").textContent = `${fmtEs(oct25.burned_total_ha, 1)} ha`;
@@ -782,21 +795,23 @@ function applyDhbMode(mode, updateMap = true) {
     document.getElementById("db-energy-loss").textContent = "29% (−1,5 dB)";
   } else if (mode === "continuous") {
     if (updateMap) updateRasterOverlay("dhv_cont.png");
-    renderSeverityTable(STATS.severity_smooth);
+    renderSeverityTable(mt);
     updateThresholdReadout(activeDbThreshold);
   } else {
     if (updateMap) renderLiveThresholdOverlay(activeDbThreshold);
-    renderSeverityTable(STATS.severity_smooth);
+    renderSeverityTable(mt);
     updateThresholdReadout(activeDbThreshold);
   }
 }
 
 function populateExecutiveSummary() {
   const m = STATS.meta;
+  const mt = STATS.severity_multitemporal || STATS.severity_smooth;
+  const mtRaw = STATS.severity_multitemporal_raw || STATS.severity_raw_20m;
   const sm = STATS.severity_smooth;
-  const raw = STATS.severity_raw_20m;
-  const oct25 = STATS.severity_oct25;
   const pol = STATS.polarizations;
+  const val = STATS.validation_dnbr;
+  const dnbr = STATS.optical_dnbr;
   const top1 = STATS.basins_summary[0];
   const top2 = STATS.basins_summary[1];
   const d = I18N[activeLang].dynamic;
@@ -805,28 +820,35 @@ function populateExecutiveSummary() {
   document.getElementById("kpi-xunta").textContent = `${fmtEs(m.official_xunta_ha)} ha`;
   document.getElementById("kpi-xunta-sub").textContent = d.xuntaSub(m.official_forest_ha, m.official_grass_ha);
   document.getElementById("kpi-effis").textContent = `${fmtEs(m.effis_ha)} ha`;
-  document.getElementById("kpi-nisar-smooth").textContent = `${fmtEs(sm.burned_total_ha, 1)} → ${fmtEs(oct25 ? oct25.burned_total_ha : sm.burned_total_ha, 1)} ha`;
+  document.getElementById("kpi-nisar-smooth").textContent = `${fmtEs(mt.burned_total_ha, 1)} ha`;
   document.getElementById("kpi-nisar-sub").textContent = d.nisarSub(
     fmtEs(sm.burned_total_ha, 1),
-    fmtEs(raw.burned_total_ha, 0),
-    fmtEs(oct25 ? oct25.burned_total_ha : sm.burned_total_ha, 1)
+    fmtEs(mtRaw.burned_total_ha, 0),
+    val ? fmtEs(val.f1, 2) : "—"
   );
-  document.getElementById("kpi-dhv").textContent = `${pol.hv_fire_net_db ?? pol.hv_fire_mean_db} dB`;
+  document.getElementById("kpi-dhv").textContent = `${pol.hv_mt_fire_mean_db ?? pol.hv_fire_net_db} dB`;
   document.getElementById("kpi-dhv-sub").textContent = d.dhvSub(pol.ctrl_offset_oct01_db ?? 0, pol.hv_oct25_fire_mean_db);
   document.getElementById("kpi-basins").textContent = d.basinsJoin(top1.basin_id, top2.basin_id);
   document.getElementById("kpi-basins-sub").textContent = d.basinsSub(STATS.basins_summary.length);
 
   const maxBar = m.effis_ha;
+  const dnbrHa = dnbr?.burned_mod_high_ha || val?.ref_mod_high_ha || 0;
   document.getElementById("bar-effis").style.width = "100%";
   document.getElementById("val-effis").textContent = `${fmtEs(m.effis_ha)} ha`;
   document.getElementById("bar-xunta").style.width = `${(m.official_xunta_ha / maxBar) * 100}%`;
   document.getElementById("val-xunta").textContent = `${fmtEs(m.official_xunta_ha)} ha`;
-  document.getElementById("bar-raw").style.width = `${(raw.burned_total_ha / maxBar) * 100}%`;
-  document.getElementById("val-raw").textContent = `${fmtEs(raw.burned_total_ha, 0)} ha`;
-  document.getElementById("bar-smooth").style.width = `${(sm.burned_total_ha / maxBar) * 100}%`;
-  document.getElementById("val-smooth").textContent = `${fmtEs(sm.burned_total_ha, 1)} ha`;
+  document.getElementById("bar-raw").style.width = `${(dnbrHa / maxBar) * 100}%`;
+  document.getElementById("val-raw").textContent = `${fmtEs(dnbrHa, 1)} ha`;
+  document.getElementById("bar-smooth").style.width = `${(mt.burned_total_ha / maxBar) * 100}%`;
+  document.getElementById("val-smooth").textContent = `${fmtEs(mt.burned_total_ha, 1)} ha`;
+  const barWet = document.getElementById("bar-wet");
+  const valWet = document.getElementById("val-wet");
+  if (barWet && valWet) {
+    barWet.style.width = `${(sm.burned_total_ha / maxBar) * 100}%`;
+    valWet.textContent = `${fmtEs(sm.burned_total_ha, 1)} ha`;
+  }
 
-  renderSeverityTable(sm);
+  renderSeverityTable(mt);
 
   // Tabla HH vs HV y WorldCover 2021
   document.getElementById("pol-compare-body").innerHTML = `
@@ -838,6 +860,7 @@ function populateExecutiveSummary() {
     pol.hh_ctrl_mean_db
   );
 
+  const valByWc = Object.fromEntries((val?.by_worldcover || []).map((x) => [x.code, x]));
   const wcBody = document.getElementById("worldcover-tbody");
   wcBody.innerHTML = (STATS.landcover_2021 || [])
     .map(
@@ -845,23 +868,25 @@ function populateExecutiveSummary() {
       <tr>
         <td>${lc[w.name] || w.name}</td>
         <td class="num">${fmtEs(w.area_ha, 1)} ha (${w.pct_of_perimeter}%)</td>
-        <td class="num">${w.dhv_net_oct01_db ?? w.dhv_mean_db} dB</td>
-        <td class="num">${w.dhv_oct25_mean_db ?? "—"} dB</td>
-        <td class="num">${w.burned_pct_oct25_15db ?? w.burned_pct_15db}%</td>
+        <td class="num">${w.dhv_mt_mean_db ?? w.dhv_oct25_mean_db ?? "—"} dB</td>
+        <td class="num">${fmtEs(w.burned_ha_mt_15db ?? w.burned_ha_15db, 1)} ha (${w.burned_pct_mt_15db ?? w.burned_pct_15db}%)</td>
+        <td class="num">${valByWc[w.code] ? `${fmtEs(valByWc[w.code].dnbr_mod_high_ha, 1)} ha` : "—"}</td>
       </tr>`
     )
     .join("");
 
-  const dnbr = STATS.optical_dnbr;
   const dnbrEl = document.getElementById("dnbr-validation-note");
   if (dnbr && dnbrEl) {
     dnbrEl.innerHTML = d.dnbrNote(
       dnbr.pre_scene,
       dnbr.post_scene,
-      fmtEs(dnbr.burned_low_plus_ha, 1),
-      fmtEs(dnbr.burned_high_ha, 1),
-      fmtEs(oct25?.burned_total_ha || 0, 1),
-      dnbr.pearson_r_vs_dhv_oct25
+      fmtEs(val?.ref_mod_high_ha ?? dnbr.burned_mod_high_ha, 1),
+      fmtEs(val?.tp_ha ?? mt.burned_total_ha, 1),
+      fmtEs(val?.sar_mt_ha ?? mt.burned_total_ha, 1),
+      fmtEs(val?.f1 ?? 0, 2),
+      fmtEs(val?.omission_ha ?? 0, 1),
+      val?.dhv_omission_mean_db ?? "−0,34",
+      dnbr.pearson_r_vs_dhv_mt ?? dnbr.pearson_r_vs_dhv_oct25
     );
   }
 
@@ -932,7 +957,7 @@ function applyLanguage(lang) {
 
   if (STATS) {
     populateExecutiveSummary();
-    if (activeDhbMode === "oct01_cal" || activeDhbMode === "oct25") {
+    if (["oct01_wet", "oct01_cal", "oct25"].includes(activeDhbMode)) {
       applyDhbMode(activeDhbMode, activeStep === "5");
     } else {
       updateThresholdReadout(activeDbThreshold);
@@ -1022,7 +1047,7 @@ async function init() {
   }
 
   map.on("load", () => {
-    const first = OVERLAYS["dhv_classes.png"];
+    const first = OVERLAYS["dhv_mt.png"] || OVERLAYS["dhv_classes.png"];
     map.addSource("radar-overlay", { type: "image", url: first.url, coordinates: first.coordinates });
     map.addLayer({ id: "radar-overlay-layer", type: "raster", source: "radar-overlay", layout: { visibility: "none" }, paint: { "raster-opacity": 0.92 } });
 
