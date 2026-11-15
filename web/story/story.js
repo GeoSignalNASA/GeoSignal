@@ -723,8 +723,12 @@ function renderSeverityTable(sevObj) {
 function updateTocLabel() {
   const pills = [...document.querySelectorAll(".toc-pill")];
   const footer = document.getElementById("cap-10");
+  const alerts = document.getElementById("cap-11");
   const atFooter = footer && footer.getBoundingClientRect().top < window.innerHeight * 0.5;
-  const current = atFooter
+  const atAlerts = alerts && alerts.getBoundingClientRect().top < window.innerHeight * 0.5;
+  const current = atAlerts
+    ? pills.find((p) => p.dataset.step === "11")
+    : atFooter
     ? pills.find((p) => p.dataset.step === "10")
     : pills.find((p) => p.dataset.step === activeStep) || pills[0];
   pills.forEach((p) => (p === current ? p.setAttribute("aria-current", "true") : p.removeAttribute("aria-current")));
