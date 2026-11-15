@@ -734,7 +734,7 @@ code {
   .topbar { gap: 0.5rem; }
   .topbar-brand .sub, #btn-print { display: none; }
   .scrolly-shell { display: flex; flex-direction: column-reverse; }
-  .map-col { position: sticky; top: var(--nav-h); height: 42vh; width: 100%; z-index: 30; }
+  .map-col { position: sticky; top: var(--nav-h); height: 33vh; width: 100%; z-index: 30; }
   .narrative-col { padding: 28px var(--gutter) 48px; }
   .narrative-col > * + * { margin-top: 48px; }
   code { white-space: normal; overflow-wrap: anywhere; }
