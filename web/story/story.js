@@ -41,9 +41,11 @@ let compareControl = null;
 let lastCompareWidth = 0;
 let beforeMap = null;
 let afterMap = null;
-let q8Pixels = null; // { data, width, height, coordinates }
+let q8Pixels = null; // { raw, width, height, info }
 let q8DecodePromise = null;
-const preloadedOverlayImages = new Map();
+let liveThresholdBlobUrl = null;
+let liveThresholdSeq = 0;
+const preloadedOverlayUrls = new Map();
 const overlayLoadPromises = new Map();
 let preloadStarted = false;
 let activeLang = "es";
@@ -194,32 +196,24 @@ function setLayerVisible(id, visible) {
 function imageSpecFor(key) {
   const info = OVERLAYS?.[key];
   if (!info) return null;
-  const cached = preloadedOverlayImages.get(key);
-  return cached
-    ? { image: cached, coordinates: info.coordinates }
-    : { url: info.url, coordinates: info.coordinates };
+  const cachedUrl = preloadedOverlayUrls.get(key);
+  return { url: cachedUrl || info.url, coordinates: info.coordinates };
 }
 
 function preloadOverlay(key) {
   const info = OVERLAYS?.[key];
   if (!info || key === "dhv_q8.png") return Promise.resolve(null);
-  if (preloadedOverlayImages.has(key)) return Promise.resolve(preloadedOverlayImages.get(key));
+  if (preloadedOverlayUrls.has(key)) return Promise.resolve(preloadedOverlayUrls.get(key));
   if (overlayLoadPromises.has(key)) return overlayLoadPromises.get(key);
-  const p = new Promise((resolve) => {
-    const img = new Image();
-    img.decoding = "async";
-    img.onload = async () => {
-      try {
-        if (typeof img.decode === "function") await img.decode();
-      } catch {
-        // fallback al objeto img ya cargado
-      }
-      preloadedOverlayImages.set(key, img);
-      resolve(img);
-    };
-    img.onerror = () => resolve(null);
-    img.src = info.url;
-  });
+  const p = fetch(info.url)
+    .then((resp) => (resp.ok ? resp.blob() : null))
+    .then((blob) => {
+      if (!blob) return null;
+      const blobUrl = URL.createObjectURL(blob);
+      preloadedOverlayUrls.set(key, blobUrl);
+      return blobUrl;
+    })
+    .catch(() => null);
   overlayLoadPromises.set(key, p);
   return p;
 }
@@ -271,7 +265,7 @@ function updateRasterOverlay(key) {
   const spec = imageSpecFor(key);
   if (!src || !spec) return;
   src.updateImage(spec);
-  if (!spec.image) preloadOverlay(key);
+  if (!preloadedOverlayUrls.has(key)) preloadOverlay(key);
   if (map.getLayer("radar-overlay-layer")) {
     map.setPaintProperty("radar-overlay-layer", "raster-opacity", setRasterOpacityForKey(key));
   }
@@ -301,8 +295,9 @@ function ensureQ8Decoded() {
 }
 
 async function renderLiveThresholdOverlay(thresholdDb) {
+  const seq = ++liveThresholdSeq;
   if (!q8Pixels) await ensureQ8Decoded();
-  if (!q8Pixels || !map) return;
+  if (!q8Pixels || !map || seq !== liveThresholdSeq) return;
   const src = map.getSource("radar-overlay");
   if (!src) return;
   const { raw, width, height, info } = q8Pixels;
@@ -330,8 +325,13 @@ async function renderLiveThresholdOverlay(thresholdDb) {
     }
   }
   ctx.putImageData(out, 0, 0);
-  const bmp = await createImageBitmap(c);
-  src.updateImage({ image: bmp, coordinates: info.coordinates });
+  const blob = await new Promise((resolve) => c.toBlob(resolve, "image/png"));
+  if (!blob || seq !== liveThresholdSeq || activeStep !== "5" || activeDhbMode !== "threshold") return;
+  const nextUrl = URL.createObjectURL(blob);
+  const prevUrl = liveThresholdBlobUrl;
+  liveThresholdBlobUrl = nextUrl;
+  src.updateImage({ url: nextUrl, coordinates: info.coordinates });
+  if (prevUrl) setTimeout(() => URL.revokeObjectURL(prevUrl), 2000);
   if (map.getLayer("radar-overlay-layer")) {
     map.setPaintProperty("radar-overlay-layer", "raster-opacity", 0.94);
   }
