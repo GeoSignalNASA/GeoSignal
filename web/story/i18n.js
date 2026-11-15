@@ -177,7 +177,7 @@ export const I18N = {
     c2Title: "24 cm microwave penetration and polarimetric response",
     c2P1:
       "Unlike passive optical satellites, L-band SAR emits its own <strong>24 cm</strong> microwaves, penetrating dense smoke plumes and clouds day and night. Cross-polarized <strong>HV</strong> backscatter reacts to 3D tree canopy structure; when leaves and twigs burn off, volumetric scattering collapses.",
-    c2CtrlLbl: "Spatial comparison (OSM terrain vs. HV backscatter):",
+    c2CtrlLbl: "NISAR HV backscatter on map:",
     c2BtnPre: "Sep 19 · HV pre (bright canopy)",
     c2BtnPost: "Oct 1 · HV post (post-fire drop)",
     c2Tip:

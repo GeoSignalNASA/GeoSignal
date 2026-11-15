@@ -97,6 +97,25 @@ function getBlockCenter() {
   return [lng, lat];
 }
 
+function mercY(lat) {
+  const rad = (lat * Math.PI) / 180;
+  return (1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2;
+}
+
+function getBlockCoverZoom(minZoom = 11.45) {
+  const coords = OVERLAYS?.["hv_pre.png"]?.coordinates;
+  const container = document.getElementById("map-frame");
+  if (!coords || coords.length < 4 || !container) return minZoom;
+  const w = container.clientWidth || 720;
+  const h = container.clientHeight || 720;
+  const dx = Math.abs(coords[1][0] - coords[0][0]) / 360;
+  const dy = Math.abs(mercY(coords[2][1]) - mercY(coords[0][1]));
+  if (!dx || !dy) return minZoom;
+  const worldNeeded = Math.max(w / dx, h / dy);
+  const z = Math.log2(worldNeeded / 512) + 0.03;
+  return Math.min(MAX_ZOOM, Math.max(minZoom, Number(z.toFixed(2))));
+}
+
 function getOverlayLabel(key) {
   const dict = I18N[activeLang];
   if (activeLang === "en" && dict?.overlayLabels?.[key]) return dict.overlayLabels[key];
@@ -296,37 +315,19 @@ function syncCompareCamera(sourceMap) {
   afterMap.jumpTo(opts);
 }
 
-function configureCompareForStep(stepId) {
+function configureCompareForStep() {
   if (!beforeMap || !afterMap) return;
-  if (stepId === "2") {
-    if (beforeMap.getLayer("opt-lyr")) {
-      beforeMap.setLayoutProperty("opt-lyr", "visibility", "none");
-    }
-    const rSrc = afterMap.getSource("rad-src");
-    const info = OVERLAYS?.[activeCap2HvKey];
-    if (rSrc && info) rSrc.updateImage({ url: info.url, coordinates: info.coordinates });
-    if (afterMap.getLayer("rad-lyr")) {
-      afterMap.setLayoutProperty("rad-lyr", "visibility", "visible");
-      afterMap.setPaintProperty("rad-lyr", "raster-opacity", 0.98);
-    }
-    if (afterMap.getLayer("aoi-frame-a-lyr")) {
-      afterMap.setLayoutProperty("aoi-frame-a-lyr", "visibility", "visible");
-    }
-    document.getElementById("cmp-left-lbl").textContent = I18N[activeLang].overlayLabels.osmTerrain;
-    document.getElementById("cmp-right-lbl").textContent = getOverlayLabel(activeCap2HvKey);
-  } else {
-    if (beforeMap.getLayer("opt-lyr")) {
-      beforeMap.setLayoutProperty("opt-lyr", "visibility", "visible");
-    }
-    if (afterMap.getLayer("rad-lyr")) {
-      afterMap.setLayoutProperty("rad-lyr", "visibility", "visible");
-      afterMap.setPaintProperty("rad-lyr", "raster-opacity", 0.94);
-    }
-    if (afterMap.getLayer("aoi-frame-a-lyr")) {
-      afterMap.setLayoutProperty("aoi-frame-a-lyr", "visibility", "none");
-    }
-    updateCompareLayers(activeOptKey, activeRadKey);
+  if (beforeMap.getLayer("opt-lyr")) {
+    beforeMap.setLayoutProperty("opt-lyr", "visibility", "visible");
   }
+  if (afterMap.getLayer("rad-lyr")) {
+    afterMap.setLayoutProperty("rad-lyr", "visibility", "visible");
+    afterMap.setPaintProperty("rad-lyr", "raster-opacity", 0.94);
+  }
+  if (afterMap.getLayer("aoi-frame-a-lyr")) {
+    afterMap.setLayoutProperty("aoi-frame-a-lyr", "visibility", "none");
+  }
+  updateCompareLayers(activeOptKey, activeRadKey);
 }
 
 function showCompareMode(show) {
@@ -336,14 +337,10 @@ function showCompareMode(show) {
   labels.classList.toggle("visible", show);
   if (show && !compareInit) initCompareMaps();
   if (show && beforeMap && afterMap) {
-    if (activeStep === "2") {
-      const target = { center: getBlockCenter(), zoom: 11.4, bearing: 0, pitch: 0 };
-      beforeMap.jumpTo(target);
-      afterMap.jumpTo(target);
-    } else {
-      syncCompareCamera(map);
-    }
-    configureCompareForStep(activeStep);
+    const target = { center: getBlockCenter(), zoom: getBlockCoverZoom(), bearing: 0, pitch: 0 };
+    beforeMap.jumpTo(target);
+    afterMap.jumpTo(target);
+    configureCompareForStep("4");
     requestAnimationFrame(() => {
       beforeMap.resize();
       afterMap.resize();
@@ -353,7 +350,7 @@ function showCompareMode(show) {
       beforeMap.resize();
       afterMap.resize();
       centerCompareSlider(true);
-    }, 620);
+    }, 360);
   }
 }
 
@@ -361,12 +358,13 @@ function initCompareMaps() {
   if (compareInit) return;
   compareInit = true;
   const center = getBlockCenter();
+  const zoom = getBlockCoverZoom();
 
   beforeMap = new maplibregl.Map({
     container: "before-map",
     style: darkBaseStyle(),
     center,
-    zoom: 11.4,
+    zoom,
     minZoom: MIN_ZOOM,
     maxZoom: MAX_ZOOM,
     maxBounds: REGION_BOUNDS,
@@ -376,7 +374,7 @@ function initCompareMaps() {
     container: "after-map",
     style: darkBaseStyle(),
     center,
-    zoom: 11.4,
+    zoom,
     minZoom: MIN_ZOOM,
     maxZoom: MAX_ZOOM,
     maxBounds: REGION_BOUNDS,
@@ -393,7 +391,7 @@ function initCompareMaps() {
     }
     beforeMap.addSource("perim-b", { type: "geojson", data: FIRE_GJ });
     beforeMap.addLayer({ id: "perim-b-lyr", type: "line", source: "perim-b", paint: { "line-color": "#8E4321", "line-width": 2.2 } });
-    if (activeStep === "2" || activeStep === "4") configureCompareForStep(activeStep);
+    if (activeStep === "4") configureCompareForStep("4");
     beforeMap.resize();
     centerCompareSlider(true);
   });
@@ -414,7 +412,7 @@ function initCompareMaps() {
     });
     afterMap.addSource("perim-a", { type: "geojson", data: FIRE_GJ });
     afterMap.addLayer({ id: "perim-a-lyr", type: "line", source: "perim-a", paint: { "line-color": "#8E4321", "line-width": 2.2 } });
-    if (activeStep === "2" || activeStep === "4") configureCompareForStep(activeStep);
+    if (activeStep === "4") configureCompareForStep("4");
     afterMap.resize();
     centerCompareSlider(true);
   });
@@ -630,7 +628,7 @@ function activateStep(stepId) {
   });
   updateTocLabel();
 
-  const isCompareStep = activeStep === "2" || activeStep === "4";
+  const isCompareStep = activeStep === "4";
   showCompareMode(isCompareStep);
 
   if (!map) return;
@@ -660,22 +658,24 @@ function activateStep(stepId) {
       setAssetMarkersVisible(true);
       break;
     case "2":
+      flyToCamera(getBlockCenter(), getBlockCoverZoom());
+      updateRasterOverlay(activeCap2HvKey);
+      setAssetMarkersVisible(true);
       break;
     case "3":
-      flyToCamera(getBlockCenter(), 11.5);
+      flyToCamera(getBlockCenter(), getBlockCoverZoom());
       updateRasterOverlay(`ts/${activeSeriesDate}`);
-      setLayerVisible("aoi-frame-line", true);
       break;
     case "4":
+      flyToCamera(getBlockCenter(), getBlockCoverZoom());
       break;
     case "5":
-      flyToCamera(getBlockCenter(), 11.6);
+      flyToCamera(getBlockCenter(), getBlockCoverZoom());
       applyDhbMode(activeDhbMode);
       break;
     case "6":
-      flyToCamera(getBlockCenter(), 11.6);
+      flyToCamera(getBlockCenter(), getBlockCoverZoom());
       updateRasterOverlay("dhh.png");
-      setLayerVisible("aoi-frame-line", true);
       break;
     case "7":
       flyToCamera([-7.88, 41.92], 10.7);
@@ -940,7 +940,7 @@ function applyLanguage(lang) {
   if (selectedBasinId !== null) selectBasinById(selectedBasinId);
   if (selectedBarrierIdx !== null) selectBarrierByIdx(selectedBarrierIdx);
   if (RAIN_SEGS_GJ) updateRainMapLayer(activeRainMm);
-  if (activeStep === "2" || activeStep === "4") configureCompareForStep(activeStep);
+  if (activeStep === "4") configureCompareForStep("4");
   updateLegendForStep(activeStep);
   updateTocLabel();
 }
@@ -1113,6 +1113,9 @@ async function init() {
       return r.top <= mid && r.bottom >= mid;
     });
     activateStep(visible ? visible.dataset.step : "summary");
+    setTimeout(() => {
+      if (!compareInit) initCompareMaps();
+    }, 350);
   });
 
   // Controles interactivos
@@ -1143,7 +1146,7 @@ async function init() {
     btn.addEventListener("click", () => {
       document.querySelectorAll("[data-cap2-hv]").forEach((b) => b.classList.toggle("active", b === btn));
       activeCap2HvKey = btn.dataset.cap2Hv;
-      if (activeStep === "2") configureCompareForStep("2");
+      if (activeStep === "2") updateRasterOverlay(activeCap2HvKey);
     });
   });
 
