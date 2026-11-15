@@ -18,7 +18,7 @@ export const I18N = {
       "7. Drenaje D8",
       "8. Replicabilidad",
       "9. Umbrales ΔHV",
-      "10. Auditoría QA",
+      "10. Fuentes y equipo",
       "11. Alertas",
     ],
     overlayLabels: {
@@ -46,11 +46,11 @@ export const I18N = {
         { color: "#46603A", label: "Núcleos / embalses OSM" },
       ],
       "2": [
-        { color: "#E9DFCE", label: "HV alto (dosel 3D)" },
+        { color: "#E9DFCE", label: "HV alto (ramas / hojas)" },
         { color: "#2C2824", label: "HV bajo (suelo / agua)" },
       ],
       "3": [
-        { color: "#E9DFCE", label: "HV alto (dosel 3D)" },
+        { color: "#E9DFCE", label: "HV alto (ramas / hojas)" },
         { color: "#2C2824", label: "HV bajo (suelo / agua)" },
       ],
       "4": [
@@ -69,7 +69,7 @@ export const I18N = {
       "7": [
         { color: "#86B0A9", label: "Riesgo bajo" },
         { color: "#478189", label: "Medio" },
-        { color: "#13344A", label: "Alto (#8 y #9)" },
+        { color: "#13344A", label: "Alto (cuencas de As Meaus y Calvos)" },
       ],
       "8": [
         { color: "#478189", label: "Escorrentía moderada" },
@@ -150,9 +150,9 @@ export const I18N = {
       nisarSub: (oct01, rawMt, f1) => `5 pre + 2 post secas (F1=${f1} vs dNBR) · 01-oct mojado: ${oct01} ha`,
       dhvSub: (offset, oct25Mean) =>
         `Compuesto jul–oct · 01-oct (+${offset} dB lluvia) · 25-oct: ${oct25Mean ?? "—"} dB`,
-      basinsJoin: (a, b) => `#${a} y #${b}`,
-      basinsSub: (total) => `Lideran las ${total} cuencas (>4,7× sobre la #3)`,
-      polHvLabel: "HV (cruzada · estructura)",
+      basinsJoin: (a, b) => `${a} y ${b}`,
+      basinsSub: (total, third) => `Lideran las ${total} cuencas (>4,7× sobre la cuenca de ${third})`,
+      polHvLabel: "HV (cruzada · ramas/hojas)",
       polHhLabel: "HH (paralela · suelo/tronco)",
       polNet: (v) => `(neto ${v ?? "—"})`,
       hhBounceNote: (pct, hhCtrl) =>
@@ -170,7 +170,7 @@ export const I18N = {
       oct25Fp: "25-oct seco",
       tsReadout: (dt, hvFire, hvCtrl, sme, qaPass) =>
         `${dt} · HV perímetro: ${hvFire} dB · control: ${hvCtrl} dB · SME2: ${sme ?? "—"} m³/m³ · QA: ${qaPass ? "PASS" : "FLAG"}`,
-      basinTitle: (id) => `Cuenca #${id}`,
+      basinTitle: (id, place) => (place ? `Cuenca de ${place}` : `Cuenca #${id}`),
       basinRank: (rank, total) => `puesto #${rank} de ${total}`,
       basinRiskLbl: "Riesgo medio (-1,5 dB)",
       basinBurnedLbl: "Quemado real",
@@ -181,7 +181,7 @@ export const I18N = {
       basinAssetsHead: "Activos OSM dentro de la cuenca:",
       basinAssetsNone:
         "Sin núcleos/embalses etiquetados dentro de esta subcuenca; el drenaje continúa aguas abajo hacia la red del Limia/Salas.",
-      barrierTitle: (n) => `Punto D8 #${n} · quiebre de pendiente`,
+      barrierTitle: (dist) => `Candidato a barrera · ${dist} del perímetro`,
       barrierPriority: "Candidata prioritaria (&lt; 3 km)",
       barrierDistant: "Lejana (&gt; 14 km)",
       barrierDistLbl: "Distancia al perímetro",
@@ -199,9 +199,11 @@ export const I18N = {
     brandSub: "Calvos de Randín",
     langBtn: "ES",
     printBtn: "Print / PDF",
-    heroTitle: "Calvos de Randín: L-band SAR severity and post-fire hydrological susceptibility",
+    heroTitle: "Calvos de Randín: the fire seen by radar, and the water risk that follows",
     heroLead:
       "NISAR L-band time series (June–October 2026), decibel-level severity (dB), smoke-free radar vs. optical comparison, and runoff susceptibility across 26 real micro-watersheds.",
+    heroGloss:
+      "<dt>ha (hectare)</dt><dd>Unit of area. 1 ha = 100 × 100 m, about one and a half football pitches.</dd><dt>dB (decibel)</dt><dd>Measures how much radar signal comes back to the satellite. The lower (more negative), the less vegetation is left.</dd><dt>NRT (near real time)</dt><dd>Automatic satellite detection within days of the fire — before anyone measures it on the ground.</dd><dt>EFFIS</dt><dd>European (Copernicus) service that detects wildfires by satellite across the EU.</dd>",
     tocLabels: [
       "Overview",
       "1. Wildfire",
@@ -218,7 +220,7 @@ export const I18N = {
     ],
     kpi1K: "Official perimeter (Xunta)",
     kpi2K: "NRT Detection (EFFIS)",
-    kpi2S: "Automated thermal/optical outline (fire_id 15925129)",
+    kpi2S: "Automated thermal/optical outline (EFFIS fire ID: 15925129)",
     kpi3K: "NISAR area (ΔHV ≤ −1.5 dB)",
     kpi4K: "Mean ΔHV change",
     kpi5K: "Critical watersheds",
@@ -234,7 +236,9 @@ export const I18N = {
     c1P1:
       "Between <strong>September 24 and 27, 2026</strong>, wildfire burned forest and shrubland across <strong>Calvos de Randín</strong>, Feás, and <strong>As Meaus (Baltar)</strong>, triggering a preventive Level-2 civil protection alert near villages draining toward the <strong>Salas Reservoir</strong> and the <strong>Limia River</strong>.",
     c1P2:
-      "On <strong>October 27, 2026</strong>, the Spanish Government formally declared both Calvos de Randín and Quiroga as Zones Severely Affected by a Civil Protection Emergency.",
+      "To avoid inflating the numbers, we didn't measure inside a square drawn by eye on the map (that would multiply the burned area by ~4.5). We used the real fire outline detected by <strong>Copernicus EFFIS</strong> (the European wildfire detection service), and the real villages and reservoirs downstream from <strong>OpenStreetMap</strong> (the free, collaborative map).",
+    c1Gloss:
+      "<dt>ha (hectare)</dt><dd>Unit of area. 1 ha = 100 × 100 m.</dd><dt>EFFIS</dt><dd>European automatic wildfire-detection service.</dd><dt>OpenStreetMap</dt><dd>A free, volunteer-made map of the world — our source for the real villages and reservoirs.</dd>",
 
     c2Num: "02 · L-band backscatter principles",
     c2Title: "24 cm microwave penetration and polarimetric response",
@@ -244,16 +248,20 @@ export const I18N = {
     c2BtnPre: "Sep 19 · HV pre (bright canopy)",
     c2BtnPost: "Oct 1 · HV post (post-fire drop)",
     c2Tip:
-      "<strong>Polarimetric interpretation:</strong><br/>· <strong>HV (cross-polarized)</strong> = sensitive to 3D canopy volume (twigs & foliage). Canopy combustion attenuates HV.<br/>· <strong>HH (co-polarized)</strong> = sensitive to bare soil, moisture, and <em>double-bounce</em> off standing trunks.<br/>· <strong>Decibels (dB)</strong>: <code>−1.5 dB</code> = <strong>29%</strong> power loss; <code>−3 dB</code> = <strong>50%</strong>; <code>−6 dB</code> = <strong>75%</strong>.",
+      "<strong>Polarimetric interpretation:</strong><br/>· <strong>HV</strong> (one of the two signals the radar measures) is sensitive to a tree's branches and leaves. When fire burns the canopy (the leafy top of the tree), this signal <strong>drops sharply</strong>.<br/>· <strong>HH</strong> (the other signal) is sensitive to bare soil, moisture, and tree trunks still standing after the fire.<br/>· <strong>Decibels (dB)</strong>: this is how we measure how much signal the radar gets back. The lower (more negative), the more vegetation was lost: <code>−1.5 dB</code> is a <strong>29%</strong> signal loss; <code>−3 dB</code>, <strong>50%</strong>; <code>−6 dB</code>, <strong>75%</strong>.",
+    c2Gloss:
+      "<dt>L-band</dt><dd>A radar wavelength of about 24 cm. The longer the wave, the better it passes through smoke, clouds, and leaves.</dd><dt>HV / HH</dt><dd>The two ways the radar sends and receives its signal. Each reacts differently to what's below: HV to branches and leaves, HH to soil and tree trunks.</dd><dt>dB (decibel)</dt><dd>Measures how much radar signal comes back to the satellite. The lower (more negative), the more vegetation has been lost.</dd>",
 
     c3Num: "03 · Time series (June–October 2026)",
     c3Title: "Pre-fire seasonal baseline vs. the October 1 backscatter drop",
     c3P1:
-      "NISAR maps this corridor (<strong>Track 15 / Frame 23 ascending</strong>) every <strong>12 days</strong>. Comparing all 10 available passes since late June against an <strong>unburned exterior control ring</strong> shows summer stability before the abrupt post-fire step.",
+      "NISAR passes over this same area, from the exact same spot in the sky, every <strong>12 days</strong> — so dates can be fairly compared. Comparing just two dates alone could be confused with normal seasonal moisture changes. That's why we use the whole series available since June–July 2026, compared against a <strong>control area that didn't burn</strong>: it looks stable before the fire, and drops sharply right after.",
+    c3Gloss:
+      "<dt>dB (decibel)</dt><dd>Measures how much radar signal comes back to the satellite. The lower, the more vegetation has been lost.</dd><dt>SME2</dt><dd>NISAR's soil-moisture product.</dd><dt>Provisional</dt><dd>NISAR is a very new mission; its data isn't finally calibrated yet and may shift slightly later on.</dd>",
     c3ChartL: "Mean HV (dB) · select acquisition",
     c3ChartR: "bars: SME2 moisture",
     c3Note:
-      "Amber markers flag passes highlighted during radiometric stability QA (Provisional products), retained with explicit disclosure.",
+      "Passes marked separately on the chart flag radiometric stability QA notices (Provisional products), retained with explicit disclosure.",
 
     c4Num: "04 · Multisensor observation",
     c4Title: "Optical obscuration by smoke and cloud cover vs. SAR acquisition",
@@ -268,6 +276,8 @@ export const I18N = {
     c4Rad2: "ΔHV severity (Oct 25 dry)",
     c4Rad3: "Oct 1 pair (wet bias)",
     c4Rad4: "Sentinel-2 dNBR (Sep 20→Oct 15)",
+    c4Gloss:
+      "<dt>dNBR</dt><dd>An index computed from ordinary satellite photos (not radar) that measures how much greener-to-browner the vegetation turned. We use it to check that the radar is getting it right.</dd>",
 
     c5Num: "09 · Parametric ΔHV sensitivity",
     c5Title: "Burn severity distribution across decibel thresholds (ΔHV)",
@@ -295,14 +305,18 @@ export const I18N = {
     c5M4: "Canopy energy lost",
     c5Ch1L: "Hectares vs. dB threshold",
     c5Ch1R: "amber = exterior false positives",
-    c5Ch2: "ΔHV distribution: perimeter (terracotta) vs. control (teal)",
+    c5Ch2: "ΔHV distribution: perimeter (orange) vs. control (blue)",
+    c5Gloss:
+      "<dt>dB (decibel)</dt><dd>Measures the radar signal drop. The lower (more negative), the more damage.</dd><dt>ΔHV (delta HV)</dt><dd>The difference between the HV signal before and after the fire.</dd><dt>ha (hectare)</dt><dd>Unit of area. 1 ha = 100 × 100 m.</dd>",
 
     c6Num: "05 · Resolution, polarization & land cover",
     c6Title: "Multilooking effects, HH/HV contrast & land-cover response",
     c6P1:
-      "The single <code>Sep 19 → Oct 1</code> pair yielded only <strong>87.5 ha</strong> smoothed because Oct 1 coincided with wet soil (<code>SME2 0.18→0.23 m³/m³</code>), lifting scene backscatter by <strong>+1.16 dB</strong>. Linear-power averaging of 5 dry pre-fire passes and 2 dry post-fire passes (<code>Oct 13</code> & <code>Oct 25</code>) with 5×5 multilooking and control calibration recovers <strong>324.9 ha</strong> (0.16% false positives).",
+      "Comparing just two dates (<code>Sep 19 → Oct 1</code>) initially yielded only <strong>87.5 ha</strong>: Oct 1 coincided with wet soil (<code>SME2 0.18→0.23 m³/m³</code>), lifting scene backscatter by <strong>+1.16 dB</strong> and masking part of the scar on top of single-pair radar grain (<em>speckle</em>). Averaging in linear power (avoiding log bias) across the <strong>5 dry pre-fire passes</strong> and <strong>2 dry post-fire passes</strong> (<code>Oct 13</code> & <code>Oct 25</code>) over 100 m windows recovers a stable <strong>324.9 ha</strong> (only 0.16% exterior false positives).",
     c6P2:
-      "The remaining gap to 518 ha official (or 483.1 ha optical <code>dNBR ≥ 0.27</code>) reflects a <strong>physical limit at 24 cm L-band</strong>: crossing with <strong>ESA WorldCover 2021</strong> (which labels Galician gorse/heath scrub as herbaceous) shows NISAR captures open shrub removal well, while surface fire beneath intact forest canopy leaves trunks and heavy branches standing (<code>ΔHV ≈ −0.07 dB</code>).",
+      "So why does it still sit below the official 518 ha or the 483.1 ha seen optically (<code>dNBR ≥ 0.27</code>)? Cross-referencing <strong>ΔHV</strong> with <strong>ESA WorldCover 2021</strong> (a European land-cover map that groups Galician gorse/heath scrub under \"grassland/herbaceous\") reveals the physical limit of a 24 cm wave: NISAR detects open-scrub removal well (<code>247.5 ha</code>), whereas surface fire creeping underneath intact tree crowns leaves trunks and heavy branches standing (<code>ΔHV ≈ −0.07 dB</code> in missed forest patches).",
+    c6Gloss:
+      "<dt>speckle</dt><dd>Random grain found in any radar image, not a fault of the satellite or the terrain.</dd><dt>ha (hectare)</dt><dd>Unit of area. 1 ha = 100 × 100 m.</dd><dt>ΔHV (delta HV)</dt><dd>How much the HV signal changed between before and after the fire.</dd><dt>WorldCover</dt><dd>European (ESA) map classifying every point of land: forest, grassland, shrubland, etc.</dd>",
     c6ThCov: "Land cover (WorldCover)",
     c6ThArea: "EFFIS area",
     c6ThO1: "ΔHV multitemp.",
@@ -316,25 +330,29 @@ export const I18N = {
     c7Num: "06 · Hydrological susceptibility (26 micro-watersheds)",
     c7Title: "Post-fire sediment susceptibility by micro-watershed & downstream receptors",
     c7P1:
-      "Combining canopy burn severity (<strong>ΔHV</strong>), surface soil dryness (<strong>SME2</strong>), and topographic slope from the <strong>Copernicus GLO-30 DEM</strong> highlights which micro-watersheds concentrate post-fire erosion risk toward the Limia and Salas headwaters.",
+      "Radar <strong>cannot</strong> tell whether the soil repels water after the fire — that can only be checked chemically, on the ground. But by combining where it burned, the <strong>slope</strong> of the terrain (from a Copernicus elevation model), and how <strong>dry</strong> the soil is (from NISAR's moisture data), we get a reasonable estimate of which areas are more likely to have rain wash away soil and ash: <code>risk = (burned) × (0.6 · slope + 0.4 · dryness)</code>.",
     c7SensLbl: "Ranking sensitivity by minimum burn severity:",
     c7Btn1: "−1.5 dB threshold",
     c7Btn2: "Severity ≥ −3.0 dB",
     c7Btn3: "Extreme ≥ −6.0 dB",
     c7Prompt: "Click a watershed on the map…",
+    c7Gloss:
+      "<dt>dB (decibel)</dt><dd>Measures the radar signal drop; the lower, the more severe the damage required for an area to count as \"burned\" in this calculation.</dd><dt>Micro-watershed</dt><dd>A small patch of land that drains rain from its slopes into the same stream.</dd>",
 
     c8Num: "07 · D8 drainage routing",
     c8Badge: "Simulation C = 0.6",
     c8Title: "Surface runoff routing and candidate retention points",
     c8P1:
-      "Traces follow real <strong>D8 flow routing</strong> computed on the DEM from 8 perimeter points toward the Limia network and Salas Reservoir. Adjust hypothetical 24 h rainfall (assumed C = 0.6 runoff ratio) and inspect <strong>slope-break check-dam candidates</strong>.",
+      "The lines follow where water would actually flow (calculated from the terrain's elevation model) from 8 points on the fire's edge toward the Limia River and the Salas Reservoir. The only <strong>hypothetical</strong> part is the amount of rain: move the slider to see how much water would come down, assuming <strong>60%</strong> of the rain runs off the surface instead of soaking into the ground (typical for burned hillsides, but not measured on this specific terrain).",
     c8SliderLbl: "Hypothetical 24h rainfall:",
     c8M1: "Burned-core runoff (NISAR)",
     c8M2: "Accumulated basin flow (Salas/Limia)",
     c8BarTitle: "Retention barrier candidates (slope break)",
-    c8BarPrompt: "Select a point on the map or click a candidate below to inspect terrain rationale.",
+    c8BarPrompt: "Click an amber or grey marker on the map to see that spot on the terrain where it would make sense to slow the water down…",
     c8Warn:
-      "<strong>DEM tile edge:</strong> western streams end at the dashed −8.0° longitude line because the downloaded GLO-30 DEM tile terminates there, not because water stops flowing.",
+      "<strong>Limit of the downloaded elevation map:</strong> The channels heading west stop at the dashed line at <code>−8.0°</code> longitude because that's the edge of the terrain tile we downloaded, not because the water really stops there.",
+    c8Gloss:
+      "<dt>mm (of rain)</dt><dd>Litres of water per square metre. 20 mm = 20 litres per m².</dd><dt>m³ (cubic metre)</dt><dd>Unit of water volume. 1 m³ = 1,000 litres.</dd><dt>DEM</dt><dd>A map where every point has its elevation; used to calculate where water would flow.</dd>",
 
     c9Num: "08 · Replicability & orbital synergy",
     c9Title: "Pipeline transfer to Quiroga (Ribeira Sacra) & Atlantic Constellation",
@@ -343,17 +361,22 @@ export const I18N = {
     c9Tip:
       "<strong>Multiscale observation:</strong><br/>Pairing <strong>NISAR</strong> (12-day high-resolution L-band structural mapping) with the upcoming <strong>Atlantic Constellation (Spain–Portugal PERTE, 16 microsatellites)</strong> would add ~3-hour revisits and GNSS-R rapid soil moisture linked to IoT rain gauges in critical basins.",
 
-    c10Num: "10 · Radiometric QA log & limitations",
-    c10Title: "NISAR acquisition audit, data sources & model constraints",
+    c10Num: "10 · Sources & team",
+    c10Title: "Project sources",
+    c10NasaH: "NASA Data",
+    c10OtherH: "Space Agency Partner & Other Data",
+    c10TeamH: "Team",
     c10P1:
-      "Pass-by-pass radiometric audit across all 10 <code>GCOV</code> and <code>SME2</code> acquisitions used in this study, including Provisional calibration notices.",
+      "All calculations are done with our own code, on open data: from the NASA/ISRO <strong>NISAR</strong> mission (<code>GCOV</code> and <code>SME2</code> products, still in test phase — \"<em>Provisional</em>\" —, always taken from the satellite's exact same orbit, identified as <strong>Track 15 / Frame 23</strong>, so every date can be fairly compared); from <strong>Copernicus</strong> (the terrain elevation model and EFFIS fire detection); from the <strong>ESA</strong> (the WorldCover 2021 land-cover map); and from <strong>OpenStreetMap</strong>.",
+    c10Gloss:
+      "<dt>GCOV / SME2</dt><dd>The two NISAR data products we use: GCOV measures vegetation, SME2 measures soil moisture.</dd><dt>Track / Frame</dt><dd>The exact orbit and segment identifier of the satellite, so anyone can check the same original data.</dd><dt>Provisional</dt><dd>NISAR is a very new mission; this data isn't finally calibrated yet.</dd><dt>QA (quality assurance)</dt><dd>A check that each satellite pass is reliable before using it.</dd>",
     c10Th1: "Pass date",
     c10Th2: "Perimeter coverage",
     c10Th3: "Control mean HV",
     c10Th4: "Offset vs. median",
     c10Th5: "QA status",
     c10Warn:
-      "<strong>Explicit limitations:</strong> Provisional NISAR products may carry minor radiometric offsets up to ±0.3 dB; D8 flow traces end at −8.0° W due to GLO-30 tile extent; m³ runoff totals assume C = 0.6 without stream-gauge calibration.",
+      "<strong>Explicit limitations:</strong> (1) radar cannot tell whether soil repels water or measure its grain size — that can only be checked on the ground; (2) rain right before a satellite pass can boost the signal and mask mild canopy damage; (3) the land-cover map (WorldCover) is from 2021, not current; (4) the rain simulation assumes 60% surface runoff (not measured on this terrain), and is cut off at the edge of the downloaded elevation tile; (5) the NISAR data used here is still in test phase (\"Provisional\"), not the final version.",
 
     overlayLabels: {
       "hv_pre.png": "NISAR L-Band · HV pre (Sep 19)",
@@ -380,11 +403,11 @@ export const I18N = {
         { color: "#46603A", label: "OSM villages / reservoirs" },
       ],
       "2": [
-        { color: "#E9DFCE", label: "High HV (3D canopy)" },
+        { color: "#E9DFCE", label: "High HV (branches / leaves)" },
         { color: "#2C2824", label: "Low HV (bare ground / water)" },
       ],
       "3": [
-        { color: "#E9DFCE", label: "High HV (3D canopy)" },
+        { color: "#E9DFCE", label: "High HV (branches / leaves)" },
         { color: "#2C2824", label: "Low HV (bare ground / water)" },
       ],
       "4": [
@@ -403,7 +426,7 @@ export const I18N = {
       "7": [
         { color: "#86B0A9", label: "Low risk" },
         { color: "#478189", label: "Medium" },
-        { color: "#13344A", label: "High (#8 & #9)" },
+        { color: "#13344A", label: "High (As Meaus and Calvos watersheds)" },
       ],
       "8": [
         { color: "#478189", label: "Moderate runoff" },
@@ -484,9 +507,9 @@ export const I18N = {
       nisarSub: (oct01, rawMt, f1) => `5 pre + 2 dry post (F1=${f1} vs dNBR) · wet Oct 1: ${oct01} ha`,
       dhvSub: (offset, oct25Mean) =>
         `Jul–Oct composite · Oct 1 (+${offset} dB rain) · Oct 25: ${oct25Mean ?? "—"} dB`,
-      basinsJoin: (a, b) => `#${a} & #${b}`,
-      basinsSub: (total) => `Top among ${total} basins (>4.7× higher than #3)`,
-      polHvLabel: "HV (cross · structure)",
+      basinsJoin: (a, b) => `${a} and ${b}`,
+      basinsSub: (total, third) => `Top among ${total} basins (>4.7× higher than the ${third} watershed)`,
+      polHvLabel: "HV (cross · branches/leaves)",
       polHhLabel: "HH (parallel · ground/trunk)",
       polNet: (v) => `(net ${v ?? "—"})`,
       hhBounceNote: (pct, hhCtrl) =>
@@ -504,7 +527,7 @@ export const I18N = {
       oct25Fp: "Oct 25 dry",
       tsReadout: (dt, hvFire, hvCtrl, sme, qaPass) =>
         `${dt} · Perimeter HV: ${hvFire} dB · control: ${hvCtrl} dB · SME2: ${sme ?? "—"} m³/m³ · QA: ${qaPass ? "PASS" : "FLAG"}`,
-      basinTitle: (id) => `Watershed #${id}`,
+      basinTitle: (id, place) => (place ? `${place} watershed` : `Watershed #${id}`),
       basinRank: (rank, total) => `rank #${rank} of ${total}`,
       basinRiskLbl: "Mean risk (-1.5 dB)",
       basinBurnedLbl: "Actual burned",
@@ -515,7 +538,7 @@ export const I18N = {
       basinAssetsHead: "OSM assets inside watershed:",
       basinAssetsNone:
         "No settlements/reservoirs tagged inside this sub-basin; drainage continues downstream toward the Limia/Salas network.",
-      barrierTitle: (n) => `D8 Point #${n} · slope break`,
+      barrierTitle: (dist) => `Barrier candidate · ${dist} from the perimeter`,
       barrierPriority: "Priority candidate (&lt; 3 km)",
       barrierDistant: "Distant (&gt; 14 km)",
       barrierDistLbl: "Distance to perimeter",

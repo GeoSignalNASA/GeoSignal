@@ -32,7 +32,7 @@
       <a class="toc-pill" data-step="8" href="#cap-8">7. Drenaje D8</a>
       <a class="toc-pill" data-step="9" href="#cap-9">8. Replicabilidad</a>
       <a class="toc-pill" data-step="5" href="#cap-5">9. Umbrales ΔHV</a>
-      <a class="toc-pill" data-step="10" href="#cap-10">10. Auditoría QA</a>
+      <a class="toc-pill" data-step="10" href="#cap-10">10. Fuentes y equipo</a>
       <a class="toc-pill" data-step="11" href="#cap-11">11. Alertas</a>
       </div>
     </nav>
@@ -49,7 +49,7 @@
       <!-- PANORAMA INICIAL -->
       <section class="summary-step step-card is-active" data-step="summary" id="panorama">
         <header class="report-intro">
-          <h1 id="hero-title" data-i18n="heroTitle">Calvos de Randín: severidad SAR en Banda L y susceptibilidad hidrológica</h1>
+          <h1 id="hero-title" data-i18n="heroTitle">Calvos de Randín: el incendio visto por radar, y el riesgo de agua después</h1>
           <p class="hero-lead" id="hero-lead" data-i18n="heroLead">
             Serie NISAR en Banda L (junio–octubre 2026) sobre Ourense y las 26 microcuencas hacia el Embalse de Salas y el río Limia.
           </p>
@@ -64,7 +64,7 @@
           <div class="kpi-card">
             <div class="k" data-i18n="kpi2K">Detección NRT (EFFIS)</div>
             <div class="v" id="kpi-effis">—</div>
-            <div class="s" data-i18n="kpi2S">Contorno térmico/óptico automático (fire_id 15925129)</div>
+            <div class="s" data-i18n="kpi2S">Contorno térmico/óptico automático (ID de incendio EFFIS: 15925129)</div>
           </div>
           <div class="kpi-card">
             <div class="k" data-i18n="kpi3K">Superficie NISAR (ΔHV ≤ −1,5 dB)</div>
@@ -113,6 +113,16 @@
         </div>
       </section>
 
+      <details class="glossary intro-glossary">
+        <summary>Qué significan las siglas de esta introducción</summary>
+        <dl data-i18n-html="heroGloss">
+          <dt>ha (hectárea)</dt><dd>Unidad de superficie. 1 ha = 100 × 100 m, como un campo de fútbol y medio.</dd>
+          <dt>dB (decibelio)</dt><dd>Mide cuánta señal de radar vuelve al satélite. Cuanto más bajo (más negativo), menos vegetación queda.</dd>
+          <dt>NRT (near real time)</dt><dd>Detección automática por satélite, a los pocos días del incendio — antes de que nadie lo mida sobre el terreno.</dd>
+          <dt>EFFIS</dt><dd>Servicio europeo (Copernicus) que detecta incendios por satélite en toda la UE.</dd>
+        </dl>
+      </details>
+
       <article class="step-card" data-step="1" id="cap-1">
         <div class="step-num"><span data-i18n="c1Num">01 · Área de estudio y cronología</span></div>
         <h2 data-i18n="c1Title">El incendio de Calvos de Randín (24–27 de septiembre de 2026)</h2>
@@ -123,10 +133,19 @@
           <strong>As Meaus (Baltar)</strong>.
         </p>
         <p data-i18n-html="c1P2">
-          En lugar de recortar estadísticas con un rectángulo arbitrario (que sobreestima la superficie ~4,5×),
-          usamos el polígono NRT real de <strong>Copernicus EFFIS</strong> y los núcleos y embalses reales de OpenStreetMap
-          aguas abajo.
+          Para no inflar las cifras, no medimos dentro de un cuadrado puesto a ojo sobre el mapa (eso multiplicaría
+          la superficie quemada por ~4,5). Usamos el contorno real del incendio que detectó <strong>Copernicus EFFIS</strong>
+          (el servicio europeo de detección de incendios), y los pueblos y embalses reales que hay aguas abajo, según
+          <strong>OpenStreetMap</strong> (el mapa colaborativo y libre).
         </p>
+        <details class="glossary">
+          <summary>Qué significan las siglas de este apartado</summary>
+          <dl data-i18n-html="c1Gloss">
+            <dt>ha (hectárea)</dt><dd>Unidad de superficie. 1 ha = 100 × 100 m.</dd>
+            <dt>EFFIS</dt><dd>Servicio europeo de detección automática de incendios por satélite.</dd>
+            <dt>OpenStreetMap</dt><dd>Mapa del mundo hecho por voluntarios, de uso libre; de ahí sacamos los pueblos y embalses reales.</dd>
+          </dl>
+        </details>
       </article>
 
       <article class="step-card" data-step="2" id="cap-2">
@@ -147,20 +166,33 @@
         </div>
         <div class="human-tip" data-i18n-html="c2Tip">
           <strong>Interpretación polarimétrica:</strong><br/>
-          · <strong>HV (polarización cruzada)</strong> = sensible al volumen 3D del dosel (ramas y hojas). Si el fuego consume la copa, <strong>HV se atenúa</strong>.<br/>
-          · <strong>HH (polarización paralela)</strong> = sensible al suelo desnudo, humedad superficial y <em>doble rebote</em> en troncos en pie.<br/>
-          · <strong>Decibelios (dB)</strong>: <code>−1,5 dB</code> equivale a perder <strong>29 %</strong> de la potencia devuelta; <code>−3 dB</code>, el <strong>50 %</strong>; <code>−6 dB</code>, el <strong>75 %</strong>.
+          · <strong>HV</strong> (una de las dos señales que mide el radar) es sensible a las ramas y hojas del árbol.
+          Si el fuego quema la copa (la parte de arriba del árbol, con las hojas), esta señal <strong>baja mucho</strong>.<br/>
+          · <strong>HH</strong> (la otra señal) es sensible al suelo desnudo, a la humedad, y a los troncos que quedan
+          en pie tras el fuego.<br/>
+          · <strong>Decibelios (dB)</strong>: así se mide cuánta señal devuelve el radar. Cuanto más baja (más negativa),
+          más vegetación se ha perdido: <code>−1,5 dB</code> es perder un <strong>29 %</strong> de la señal; <code>−3 dB</code>,
+          el <strong>50 %</strong>; <code>−6 dB</code>, el <strong>75 %</strong>.
         </div>
+        <details class="glossary">
+          <summary>Qué significan las siglas de este apartado</summary>
+          <dl data-i18n-html="c2Gloss">
+            <dt>Banda L</dt><dd>Un tipo de onda de radar de unos 24 cm. Cuanto más larga la onda, mejor atraviesa el humo, las nubes y las hojas.</dd>
+            <dt>HV / HH</dt><dd>Las dos formas en que el radar envía y recibe su señal. Cada una reacciona distinto según lo que haya debajo: HV a ramas y hojas, HH al suelo y los troncos.</dd>
+            <dt>dB (decibelio)</dt><dd>Mide cuánta señal de radar vuelve al satélite. Cuanto más baja (más negativa), más vegetación se ha perdido.</dd>
+          </dl>
+        </details>
       </article>
 
       <article class="step-card" data-step="3" id="cap-3">
         <div class="step-num"><span data-i18n="c3Num">03 · Serie temporal (junio–octubre 2026)</span></div>
         <h2 data-i18n="c3Title">Estabilidad estacional previa frente al descenso del 1 de octubre</h2>
         <p data-i18n-html="c3P1">
-          NISAR cartografía este corredor (<strong>Track 15 / Frame 23 ascendente</strong>) cada <strong>12 días</strong>.
-          Comparar solo dos fechas podría confundirse con cambios estacionales de humedad. Al analizar toda la serie
-          disponible desde junio–julio de 2026 frente a una <strong>zona de control exterior no quemada</strong>, la
-          estabilidad previa contrasta con el escalón abrupto tras el incendio.
+          NISAR vuelve a pasar por esta misma zona, exactamente por el mismo sitio del cielo, cada <strong>12 días</strong>
+          — así las fechas se pueden comparar entre sí de forma justa. Comparar solo dos fechas podría confundirse con
+          cambios normales de humedad según la estación del año. Por eso usamos toda la serie disponible desde junio–julio
+          de 2026 y la comparamos con una <strong>zona de control que no se quemó</strong>: se ve estable antes del incendio,
+          y cae de golpe justo después.
         </p>
         <div class="chart-box">
           <div class="chart-title"><span data-i18n="c3ChartL">HV medio (dB) · seleccionar fecha</span><span data-i18n="c3ChartR">barras: SME2 humedad</span></div>
@@ -168,8 +200,16 @@
           <div id="ts-selected-readout" aria-live="polite" style="font-family:var(--mono);font-size:0.75rem;color:var(--cyan);margin-top:0.4rem"></div>
         </div>
         <p style="font-size:0.86rem;color:var(--text-muted)" data-i18n-html="c3Note">
-          Los puntos amarillos marcan pasadas señaladas en auditoría de estabilidad radiométrica (productos <em>Provisional</em>); se conservan con aviso explícito.
+          Las pasadas marcadas aparte en el gráfico corresponden a auditoría de estabilidad radiométrica (productos <em>Provisional</em>); se conservan con aviso explícito.
         </p>
+        <details class="glossary">
+          <summary>Qué significan las siglas de este apartado</summary>
+          <dl data-i18n-html="c3Gloss">
+            <dt>dB (decibelio)</dt><dd>Mide cuánta señal de radar vuelve al satélite. Cuanto más baja, más vegetación se ha perdido.</dd>
+            <dt>SME2</dt><dd>El dato de humedad del suelo de NISAR (de su nombre en inglés, Soil Moisture).</dd>
+            <dt>Provisional</dt><dd>NISAR es una misión muy nueva; sus datos aún no tienen la calibración final y podrían ajustarse ligeramente más adelante.</dd>
+          </dl>
+        </details>
       </article>
 
       <article class="step-card" data-step="4" id="cap-4">
@@ -195,24 +235,42 @@
             <button class="pill-btn" type="button" data-rad-key="dnbr_s2.png" data-i18n="c4Rad4">Sentinel-2 dNBR (20-sep→15-oct)</button>
           </div>
         </div>
+        <details class="glossary">
+          <summary>Qué significan las siglas de este apartado</summary>
+          <dl data-i18n-html="c4Gloss">
+            <dt>dNBR</dt><dd>Un índice calculado con fotos normales de satélite (no radar) que mide cuánto cambió el verdor de la vegetación. Lo usamos para comprobar que el radar acierta.</dd>
+          </dl>
+        </details>
       </article>
 
       <article class="step-card" data-step="6" id="cap-6">
         <div class="step-num"><span data-i18n="c6Num">05 · Resolución, polarización y cobertura</span></div>
         <h2 data-i18n="c6Title">Efecto del multilooking, contraste HH/HV y respuesta por cobertura</h2>
         <p data-i18n-html="c6P1">
-          El par inicial <code>19-sep → 01-oct</code> arrojaba solo <strong>87,5 ha</strong> suavizadas porque la pasada
-          del 1 de octubre coincidió con suelo húmedo (<code>SME2 0,18→0,23 m³/m³</code>), elevando toda la escena en
-          <strong>+1,16 dB</strong> y tapando parte de la cicatriz. Promediando en <strong>potencia lineal</strong> las
-          5 pasadas secas previas y las 2 secas posteriores (<code>13</code> y <code>25-oct</code>), con multilook 5×5
-          y calibración de control, afloran <strong>324,9 ha</strong> (0,16 % de falsos positivos fuera del incendio).
+          Al principio, comparando solo dos fechas (<code>19-sep → 01-oct</code>), salían únicamente <strong>87,5 ha</strong>:
+          el 1 de octubre coincidió con suelo húmedo (<code>SME2 0,18→0,23 m³/m³</code>), lo que subió el brillo radar
+          en <strong>+1,16 dB</strong> y tapó parte del incendio, además del ruido granular (<em>speckle</em>) de mirar un
+          par aislado. Promediando en <strong>escala lineal</strong> (sin sesgo logarítmico) las <strong>5 pasadas secas
+          previas</strong> y las <strong>2 secas posteriores</strong> (<code>13</code> y <code>25-oct</code>) con ventanas
+          de 100 m y control exterior, afloran <strong>324,9 ha</strong> estables (solo 0,16 % de falsos avisos fuera).
         </p>
         <p data-i18n-html="c6P2">
-          La diferencia restante hasta las 518 ha oficiales (o 483,1 ha ópticas con <code>dNBR ≥ 0,27</code>) responde a
-          un <strong>límite físico de la Banda L (24 cm)</strong>: según <strong>ESA WorldCover 2021</strong> (que en
-          Galicia agrupa monte bajo/tojo en la clase herbácea), NISAR detecta donde desaparece el matorral abierto,
-          mientras el fuego de superficie bajo copa arbolada deja intactos troncos y ramas gruesas (<code>ΔHV ≈ −0,07 dB</code>).
+          ¿Y por qué queda por debajo de las 518 ha oficiales o las 483,1 ha vistas en foto óptica (<code>dNBR ≥ 0,27</code>)?
+          Cruzando <strong>ΔHV</strong> con <strong>ESA WorldCover 2021</strong> (un mapa europeo de tipos de terreno que en
+          Galicia agrupa el monte bajo y tojo dentro de «pasto/herbáceo») se ve el límite físico de la onda de 24 cm:
+          NISAR detecta muy bien dónde arde el matorral abierto (<code>247,5 ha</code>), pero cuando el fuego corre por
+          debajo de los árboles sin tirar copas ni troncos, la onda los atraviesa casi sin enterarse
+          (<code>ΔHV ≈ −0,07 dB</code> en la zona arbolada no detectada).
         </p>
+        <details class="glossary">
+          <summary>Qué significan las siglas de este apartado</summary>
+          <dl data-i18n-html="c6Gloss">
+            <dt>speckle</dt><dd>Granulado aleatorio propio de cualquier imagen de radar, no un fallo del satélite ni del terreno.</dd>
+            <dt>ha (hectárea)</dt><dd>Unidad de superficie. 1 ha = 100 × 100 m.</dd>
+            <dt>ΔHV (delta HV)</dt><dd>Cuánto ha cambiado la señal HV entre el antes y el después del incendio.</dd>
+            <dt>WorldCover</dt><dd>Mapa europeo (ESA) que clasifica cada punto del terreno: bosque, pasto, matorral, etc.</dd>
+          </dl>
+        </details>
 
         <table class="data-table">
           <thead>
@@ -235,10 +293,11 @@
         <div class="step-num"><span data-i18n="c7Num">06 · Susceptibilidad hidrológica (26 microcuencas)</span></div>
         <h2 data-i18n="c7Title">Índice de arrastre potencial por microcuenca y receptores aguas abajo</h2>
         <p data-i18n-html="c7P1">
-          El radar <strong>no</strong> detecta químicamente la hidrofobicidad del suelo. Pero al combinar la pérdida de
-          cubierta vegetal (<code>máscara ΔHV</code>), la <strong>pendiente</strong> (Copernicus DEM) y la
-          <strong>sequedad superficial</strong> (NISAR <code>SME2</code>), obtenemos un índice físico de susceptibilidad:
-          <code>riesgo = quemado × (0,6·pendiente + 0,4·sequedad)</code>.
+          El radar <strong>no</strong> mide si el suelo repele el agua tras el fuego — eso solo se puede comprobar
+          químicamente, sobre el terreno. Pero combinando dónde se quemó, la <strong>pendiente</strong> del terreno
+          (de un modelo de elevación de Copernicus) y lo <strong>seco</strong> que está el suelo (del dato de humedad
+          de NISAR), obtenemos una estimación razonable de qué zonas tienen más riesgo de que la lluvia arrastre tierra
+          y ceniza: <code>riesgo = (si se quemó) × (0,6 · pendiente + 0,4 · sequedad)</code>.
         </p>
         <div class="control-box">
           <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.35rem" data-i18n="c7SensLbl">Sensibilidad del ranking según severidad mínima exigida:</div>
@@ -249,15 +308,24 @@
           </div>
           <div class="basin-card" id="basin-inspector" aria-live="polite" data-i18n="c7Prompt">Haz clic en una cuenca del mapa…</div>
         </div>
+        <details class="glossary">
+          <summary>Qué significan las siglas de este apartado</summary>
+          <dl data-i18n-html="c7Gloss">
+            <dt>dB (decibelio)</dt><dd>Mide la caída de señal de radar; cuanto más baja, más severo el daño exigido para contar una zona como "quemada" en este cálculo.</dd>
+            <dt>Microcuenca</dt><dd>Una porción pequeña de terreno que recoge el agua de lluvia de sus laderas hacia un mismo arroyo.</dd>
+          </dl>
+        </details>
       </article>
 
       <article class="step-card" data-step="8" id="cap-8">
         <div class="step-num"><span data-i18n="c8Num">07 · Modelado de drenaje D8</span><span class="step-badge hyp" data-i18n="c8Badge">Simulación C = 0,6</span></div>
         <h2 data-i18n="c8Title">Trazas de escorrentía superficial y puntos de retención</h2>
         <p data-i18n-html="c8P1">
-          Las trazas siguen la dirección de flujo real (D8) calculada sobre el DEM desde 8 puntos del perímetro hacia la
-          red del Limia y el Embalse de Salas. Lo <strong>hipotético</strong> es la intensidad de lluvia: ajusta la barra
-          para estimar el volumen acumulado asumiendo un coeficiente de escorrentía <code>C = 0,6</code> (no medido in situ).
+          Las líneas siguen por dónde bajaría el agua de verdad (calculado a partir del modelo de elevación del terreno)
+          desde 8 puntos del borde del incendio hacia el río Limia y el Embalse de Salas. Lo <strong>hipotético</strong>
+          es solo la cantidad de lluvia: mueve la barra para ver cuánta agua bajaría, suponiendo que un <strong>60 %</strong>
+          de lo que llueve corre por la superficie en vez de empapar la tierra (un valor típico para monte quemado, pero
+          no medido en este terreno concreto).
         </p>
         <div class="control-box">
           <label for="rain-slider">
@@ -271,13 +339,22 @@
           </div>
           <div style="margin-top:1.35rem;font-size:0.88rem;font-weight:600" data-i18n="c8BarTitle">Candidatos a barreras de retención (rotura de pendiente)</div>
           <div class="basin-card" id="barrier-inspector" style="margin-top:0.45rem;font-size:0.86rem;color:var(--text-muted)" data-i18n="c8BarPrompt">
-            Haz clic en un marcador ámbar o gris del mapa para inspeccionar el punto geomorfológico de depósito…
+            Haz clic en un marcador ámbar o gris del mapa para ver ese punto del terreno donde convendría frenar el agua…
           </div>
         </div>
         <div class="callout-warn" data-i18n-html="c8Warn">
-          <strong>Límite del DEM descargado:</strong> los cauces hacia el oeste se detienen en la línea discontinua de
-          <code>−8,0°</code> de longitud porque ahí termina la teja GLO-30 descargada, no porque el agua se pare ahí.
+          <strong>Límite del mapa de elevación descargado:</strong> Los cauces hacia el oeste se detienen en la línea
+          discontinua de <code>−8,0°</code> de longitud porque ahí termina la teja de terreno que descargamos, no porque
+          el agua se pare ahí de verdad.
         </div>
+        <details class="glossary">
+          <summary>Qué significan las siglas de este apartado</summary>
+          <dl data-i18n-html="c8Gloss">
+            <dt>mm (de lluvia)</dt><dd>Litros de agua por cada metro cuadrado. 20 mm = 20 litros por m².</dd>
+            <dt>m³ (metro cúbico)</dt><dd>Unidad de volumen de agua. 1 m³ = 1.000 litros.</dd>
+            <dt>DEM</dt><dd>Un mapa donde cada punto tiene su altura; con eso se calcula por dónde bajaría el agua.</dd>
+          </dl>
+        </details>
       </article>
 
       <article class="step-card" data-step="9" id="cap-9">
@@ -349,9 +426,17 @@
           <div id="chart-threshold"></div>
         </div>
         <div class="chart-box">
-          <div class="chart-title"><span data-i18n="c5Ch2">Distribución ΔHV: perímetro (terracota) vs control (cian)</span></div>
+          <div class="chart-title"><span data-i18n="c5Ch2">Distribución ΔHV: perímetro (naranja) vs control (azul)</span></div>
           <div id="chart-histogram"></div>
         </div>
+        <details class="glossary">
+          <summary>Qué significan las siglas de este apartado</summary>
+          <dl data-i18n-html="c5Gloss">
+            <dt>dB (decibelio)</dt><dd>Mide la caída de señal de radar. Cuanto más baja (más negativa), más daño.</dd>
+            <dt>ΔHV (delta HV)</dt><dd>La diferencia entre la señal HV de antes y de después del incendio.</dd>
+            <dt>ha (hectárea)</dt><dd>Unidad de superficie. 1 ha = 100 × 100 m.</dd>
+          </dl>
+        </details>
       </article>
 
     </main>
@@ -378,28 +463,41 @@
 
   <!-- CAPÍTULO 10: METODOLOGÍA, AUDITORÍA QA Y LÍMITES -->
   <section class="report-footer" id="cap-10">
-    <div class="eyebrow" data-i18n="c10Num">10 · Registro radiométrico y limitaciones</div>
-    <h2 data-i18n="c10Title">Auditoría de pasadas NISAR, fuentes y restricciones del modelo</h2>
-    <p style="color:var(--text-muted);max-width:80ch" data-i18n-html="c10P1">
-      Todos los cálculos se ejecutan en Python offline sobre datos abiertos de NASA/ISRO (NISAR <em>Provisional</em> GCOV y SME2,
-      Track 15 / Frame 23), Copernicus (DEM GLO-30 y EFFIS NRT), ESA WorldCover 2021 y OpenStreetMap.
-    </p>
+    <div class="eyebrow" data-i18n="c10Num">10 · Fuentes y equipo</div>
+    <h2 data-i18n="c10Title">Fuentes del proyecto</h2>
 
-    <table class="data-table">
-      <thead>
-        <tr><th scope="col" data-i18n="c10Th1">Fecha pasada</th><th scope="col" class="num" data-i18n="c10Th2">Cobertura perímetro</th><th scope="col" class="num" data-i18n="c10Th3">HV control medio</th><th scope="col" class="num" data-i18n="c10Th4">Desviación vs mediana</th><th scope="col" data-i18n="c10Th5">Estado QA</th></tr>
-      </thead>
-      <tbody id="qa-tbody"></tbody>
-    </table>
+    <h3 data-i18n="c10NasaH">NASA Data</h3>
+    <ul class="source-list">
+      <li><a href="https://www.earthdata.nasa.gov/data/catalog/asf-nisar-l2-gcov-provisional-v1-1" target="_blank" rel="noopener">NISAR L2 GCOV (Geocoded Polarimetric Covariance)</a></li>
+      <li><a href="https://www.earthdata.nasa.gov/data/catalog/asf-nisar-l3-sme2-provisional-v1-1" target="_blank" rel="noopener">NISAR L3 SME2 (Soil Moisture)</a></li>
+      <li><a href="https://search.asf.alaska.edu/" target="_blank" rel="noopener">ASF DAAC Vertex / Data Search</a></li>
+      <li><a href="https://urs.earthdata.nasa.gov/" target="_blank" rel="noopener">NASA Earthdata Login</a></li>
+    </ul>
 
-    <div class="callout-warn" data-i18n-html="c10Warn">
-      <strong>Limitaciones explícitas:</strong>
-      (1) El radar no mide hidrofobicidad química ni granulometría del suelo;
-      (2) la lluvia previa a la pasada puede elevar la retrodispersión y enmascarar pérdidas leves de copa;
-      (3) la cobertura ESA WorldCover corresponde a 2021;
-      (4) la simulación de lluvia usa C = 0,6 asumido y se trunca en −8,0° W;
-      (5) las pasadas NISAR son productos en fase <em>Provisional</em>.
-    </div>
+    <h3 data-i18n="c10OtherH">Space Agency Partner &amp; Other Data</h3>
+    <ul class="source-list">
+      <li><a href="https://forest-fire.emergency.copernicus.eu/" target="_blank" rel="noopener">Copernicus EFFIS (European Forest Fire Information System)</a></li>
+      <li><a href="https://registry.opendata.aws/copernicus-dem/" target="_blank" rel="noopener">Copernicus DEM GLO-30 (AWS Open Data)</a></li>
+      <li><a href="https://sentiwiki.copernicus.eu/web/sentinel-1" target="_blank" rel="noopener">Sentinel-1 (ESA/Copernicus)</a></li>
+      <li><a href="https://sentiwiki.copernicus.eu/web/sentinel-2" target="_blank" rel="noopener">Sentinel-2 (ESA/Copernicus)</a></li>
+      <li><a href="https://esa-worldcover.org/en" target="_blank" rel="noopener">ESA WorldCover 2021</a></li>
+      <li><a href="https://www.openstreetmap.org/" target="_blank" rel="noopener">OpenStreetMap</a></li>
+      <li><a href="https://www.whiteboxgeo.com/" target="_blank" rel="noopener">WhiteboxTools</a></li>
+      <li><a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a></li>
+      <li><a href="https://github.com/asfadmin/Discovery-asf_search" target="_blank" rel="noopener">asf_search (Python)</a></li>
+      <li><a href="https://geopandas.org/" target="_blank" rel="noopener">GeoPandas</a></li>
+      <li><a href="https://www.h5py.org/" target="_blank" rel="noopener">h5py</a></li>
+      <li><a href="https://rasterio.readthedocs.io/" target="_blank" rel="noopener">Rasterio</a></li>
+    </ul>
+
+    <h3 data-i18n="c10TeamH">Equipo</h3>
+    <ul class="team-list">
+      <li>Gabriel Freire Simón — <a href="https://github.com/ByteGab" target="_blank" rel="noopener">github.com/ByteGab</a></li>
+      <li>Loreto Uzquiano Esteban — <a href="https://github.com/loreeue" target="_blank" rel="noopener">github.com/loreeue</a></li>
+      <li>Claudia Gil Durán — <a href="https://github.com/claauugil" target="_blank" rel="noopener">github.com/claauugil</a></li>
+      <li>Daniel Castillo Correa — <a href="https://github.com/DanielCasti11o" target="_blank" rel="noopener">github.com/DanielCasti11o</a></li>
+      <li>Ángel García Beltrán — <a href="https://github.com/angelurano" target="_blank" rel="noopener">github.com/angelurano</a></li>
+    </ul>
   </section>
 
   <!-- CAPÍTULO 11: ALERTAS POR CORREO (necesita `python3 -m alerts serve`) -->

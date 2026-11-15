@@ -306,6 +306,10 @@ def build_basins_and_sensitivity(assets_gdf, perim_gdf, qa_rows, pre_dates, post
         bid = int(row["basin_id"])
         by_basin.setdefault(bid, []).append({"name": row["name"], "type": row["type"]})
     basins["downstream_assets"] = [json.dumps(by_basin.get(int(bid), []), ensure_ascii=False) for bid in basins["basin_id"]]
+    # Nombre del núcleo más cercano, para no mostrar nunca un "cuenca #N" pelado en la web.
+    basins["place"] = [
+        (by_basin.get(int(bid)) or [{"name": None}])[0]["name"] for bid in basins["basin_id"]
+    ]
 
     # Simplificar geometría (~10 m) para mantener < 250 KB en GeoJSON web
     basins_out = basins.copy()
@@ -315,9 +319,14 @@ def build_basins_and_sensitivity(assets_gdf, perim_gdf, qa_rows, pre_dates, post
     print(f"wrote {out_path} ({os.path.getsize(out_path) // 1024} KB, {len(basins_out)} basins)")
 
     top = basins.sort_values("risk_mean", ascending=False)[
-        ["basin_id", "rank", "risk_mean", "risk_mean_3db", "risk_mean_6db", "burned_pct", "burned_ha", "area_ha", "slope_mean_deg", "moisture_mean", "overlaps_fire"]
+        ["basin_id", "place", "rank", "risk_mean", "risk_mean_3db", "risk_mean_6db", "burned_pct", "burned_ha", "area_ha", "slope_mean_deg", "moisture_mean", "overlaps_fire"]
     ]
-    return top.to_dict(orient="records"), by_basin
+    # pandas convierte None en float('nan') dentro de columnas objeto; normalizar a None para JSON estricto
+    records = [
+        {**row, "place": row["place"] if isinstance(row["place"], str) else None}
+        for row in top.to_dict(orient="records")
+    ]
+    return records, by_basin
 
 
 def main():
@@ -704,7 +713,7 @@ def main():
     }
     stats_path = os.path.join(ASSETS_DATA_DIR, "story_stats.json")
     with open(stats_path, "w", encoding="utf-8") as f:
-        json.dump(stats, f, indent=2, ensure_ascii=False)
+        json.dump(stats, f, indent=2, ensure_ascii=False, allow_nan=False)
     print(f"wrote {stats_path} ({os.path.getsize(stats_path) // 1024} KB)")
 
 

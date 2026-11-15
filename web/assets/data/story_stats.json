@@ -933,6 +933,7 @@
   "basins_summary": [
     {
       "basin_id": 9,
+      "place": "As Meaus",
       "rank": 1,
       "risk_mean": 0.031856,
       "risk_mean_3db": 0.018001,
@@ -946,6 +947,7 @@
     },
     {
       "basin_id": 8,
+      "place": "Calvos",
       "rank": 2,
       "risk_mean": 0.013714,
       "risk_mean_3db": 0.007366,
@@ -959,6 +961,7 @@
     },
     {
       "basin_id": 16,
+      "place": "Guntumil",
       "rank": 3,
       "risk_mean": 0.002896,
       "risk_mean_3db": 5e-05,
@@ -972,6 +975,7 @@
     },
     {
       "basin_id": 23,
+      "place": null,
       "rank": 4,
       "risk_mean": 0.002165,
       "risk_mean_3db": 0.000202,
@@ -985,6 +989,7 @@
     },
     {
       "basin_id": 14,
+      "place": "Requiás",
       "rank": 5,
       "risk_mean": 0.001905,
       "risk_mean_3db": 6.2e-05,
@@ -998,6 +1003,7 @@
     },
     {
       "basin_id": 3,
+      "place": null,
       "rank": 6,
       "risk_mean": 0.001868,
       "risk_mean_3db": 0.000741,
@@ -1011,6 +1017,7 @@
     },
     {
       "basin_id": 26,
+      "place": null,
       "rank": 7,
       "risk_mean": 0.001529,
       "risk_mean_3db": 9e-06,
@@ -1024,6 +1031,7 @@
     },
     {
       "basin_id": 10,
+      "place": "Maus de Salas",
       "rank": 8,
       "risk_mean": 0.001362,
       "risk_mean_3db": 0.000578,
@@ -1037,6 +1045,7 @@
     },
     {
       "basin_id": 20,
+      "place": null,
       "rank": 9,
       "risk_mean": 0.001199,
       "risk_mean_3db": 0.0,
@@ -1050,6 +1059,7 @@
     },
     {
       "basin_id": 22,
+      "place": null,
       "rank": 10,
       "risk_mean": 0.000875,
       "risk_mean_3db": 0.0,
@@ -1063,6 +1073,7 @@
     },
     {
       "basin_id": 19,
+      "place": "Tourém (PT)",
       "rank": 11,
       "risk_mean": 0.000856,
       "risk_mean_3db": 0.0,
@@ -1076,6 +1087,7 @@
     },
     {
       "basin_id": 21,
+      "place": null,
       "rank": 12,
       "risk_mean": 0.000737,
       "risk_mean_3db": 3.6e-05,
@@ -1089,6 +1101,7 @@
     },
     {
       "basin_id": 4,
+      "place": "Vila",
       "rank": 13,
       "risk_mean": 0.00059,
       "risk_mean_3db": 0.0,
@@ -1102,6 +1115,7 @@
     },
     {
       "basin_id": 25,
+      "place": null,
       "rank": 14,
       "risk_mean": 0.000572,
       "risk_mean_3db": 1.2e-05,
@@ -1115,6 +1129,7 @@
     },
     {
       "basin_id": 7,
+      "place": null,
       "rank": 15,
       "risk_mean": 0.000554,
       "risk_mean_3db": 0.0,
@@ -1128,6 +1143,7 @@
     },
     {
       "basin_id": 2,
+      "place": "Castelaus",
       "rank": 16,
       "risk_mean": 0.000339,
       "risk_mean_3db": 0.0,
@@ -1141,6 +1157,7 @@
     },
     {
       "basin_id": 12,
+      "place": "Embalse de Salas",
       "rank": 17,
       "risk_mean": 0.000186,
       "risk_mean_3db": 0.0,
@@ -1154,6 +1171,7 @@
     },
     {
       "basin_id": 18,
+      "place": "Randín",
       "rank": 18,
       "risk_mean": 0.00017,
       "risk_mean_3db": 0.0,
@@ -1167,6 +1185,7 @@
     },
     {
       "basin_id": 24,
+      "place": null,
       "rank": 19,
       "risk_mean": 0.000152,
       "risk_mean_3db": 0.0,
@@ -1180,6 +1199,7 @@
     },
     {
       "basin_id": 1,
+      "place": null,
       "rank": 20,
       "risk_mean": 9.4e-05,
       "risk_mean_3db": 0.0,
@@ -1193,6 +1213,7 @@
     },
     {
       "basin_id": 6,
+      "place": null,
       "rank": 21,
       "risk_mean": 9.1e-05,
       "risk_mean_3db": 0.0,
@@ -1206,6 +1227,7 @@
     },
     {
       "basin_id": 15,
+      "place": null,
       "rank": 22,
       "risk_mean": 3.7e-05,
       "risk_mean_3db": 0.0,
@@ -1219,6 +1241,7 @@
     },
     {
       "basin_id": 13,
+      "place": null,
       "rank": 23,
       "risk_mean": 3.4e-05,
       "risk_mean_3db": 0.0,
@@ -1232,6 +1255,7 @@
     },
     {
       "basin_id": 11,
+      "place": "Muíños",
       "rank": 24,
       "risk_mean": 4e-06,
       "risk_mean_3db": 0.0,
@@ -1245,6 +1269,7 @@
     },
     {
       "basin_id": 5,
+      "place": null,
       "rank": 25,
       "risk_mean": 0.0,
       "risk_mean_3db": 0.0,
@@ -1258,6 +1283,7 @@
     },
     {
       "basin_id": 17,
+      "place": null,
       "rank": 25,
       "risk_mean": 0.0,
       "risk_mean_3db": 0.0,

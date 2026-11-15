@@ -35,12 +35,15 @@ def main():
     if errors:
         raise SystemExit("\n".join(errors))
 
+    def _reject_nan(c):
+        raise ValueError(f"Constante JSON no estándar detectada: {c}")
+
     with open(MANIFEST_PATH, encoding="utf-8") as f:
-        manifest = json.load(f)
+        manifest = json.load(f, parse_constant=_reject_nan)
     with open(STATS_PATH, encoding="utf-8") as f:
-        stats = json.load(f)
+        stats = json.load(f, parse_constant=_reject_nan)
     with open(OVERLAYS_JSON, encoding="utf-8") as f:
-        overlays = json.load(f)
+        overlays = json.load(f, parse_constant=_reject_nan)
 
     # 1. QA de serie temporal: EPSG idéntico y cobertura >= 99% en el perímetro
     qa = manifest["qa"]
