@@ -1,166 +1,240 @@
-# GeoSignal — Calvos de Randín (Ourense)
+<div align="center">
 
-Mapa de severidad de incendio (NISAR L-band, pre vs. post) y riesgo de
-arrastre por microcuenca, para el incendio de Calvos de Randín (Ourense,
-Galicia): ignición 2026-09-24, controlado 2026-09-27, ~518 ha.
+# GeoSignal
 
-## Estructura
+### *¿Qué ocurre después de un incendio forestal?*
+
+Web interactiva que transforma **radar satelital NISAR (Banda L)**, terreno y lluvia en información clara para **anticipar dónde bajará el barro** y prevenir desastres ambientales tras un incendio.
+
+![NASA Space Apps](https://img.shields.io/badge/NASA%20Space%20Apps-Dancing%20with%20the%20SARs-0B3D91?style=for-the-badge)
+![NISAR](https://img.shields.io/badge/NISAR-L--band%20SAR-1f6feb?style=for-the-badge)
+![Python](https://img.shields.io/badge/Python-pipeline%20reproducible-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Web](https://img.shields.io/badge/Web-est%C3%A1tica%20e%20interactiva-e34c26?style=for-the-badge)
+
+**Caso de estudio:** incendio de **Calvos de Randín** (Ourense, Galicia) · ignición `2026-09-24` · controlado `2026-09-27`
+
+**Observar** → **Analizar** → **Prevenir**
+
+</div>
+
+---
+
+## Índice
+
+1. [La segunda emergencia](#la-segunda-emergencia)
+2. [Nuestra propuesta](#nuestra-propuesta)
+3. [Antes y después del incendio](#antes-y-después-del-incendio)
+4. [Radar para humanos](#radar-para-humanos)
+5. [Cómo funciona](#cómo-funciona)
+6. [Resultados y honestidad científica](#resultados-y-honestidad-científica)
+7. [La aplicación web](#la-aplicación-web)
+8. [Simulador de lluvia y soluciones](#simulador-de-lluvia-y-soluciones)
+9. [Alertas por correo](#alertas-por-correo)
+10. [Estructura del repositorio](#estructura-del-repositorio)
+11. [Pipeline de datos](#pipeline-de-datos)
+12. [Escalabilidad y futuro](#escalabilidad-y-futuro)
+13. [Fuentes de datos](#fuentes-de-datos)
+
+---
+
+## La segunda emergencia
+
+Cuando se apaga un incendio, la emergencia **no ha terminado**. La vegetación que protegía el suelo ha desaparecido, y con ella las raíces que lo sujetaban. Cuando vuelven las lluvias, el agua arrastra tierra, ceniza, piedras y restos de árboles hacia zonas más bajas.
+
+| | |
+|---|---|
+| **Las primeras lluvias** | El agua no penetra en la tierra quemada y se forman riadas de barro y ceniza. |
+| **Los pueblos aguas abajo** | Toneladas de sedimento llegan a los ríos, dañan carreteras, puentes e infraestructuras y contaminan las captaciones de agua potable. |
+| **La ceguera óptica** | Los satélites fotográficos no ven nada bajo nubes densas o columnas de humo, justo cuando más hace falta. |
+
+> **Precedente real:** tras el megaincendio de la Ribeira Sacra (Pantón y Sober, Lugo, sept. 2025, 1.805 ha), las lluvias arrastraron ceniza hacia los ríos Cabe y Sil y obligaron a obras de emergencia.
+
+---
+
+## Nuestra propuesta
+
+GeoSignal combina **radar satelital de microondas** (Banda L de NISAR) con **mapas de elevación del terreno**. En lugar de limitarse a marcar el perímetro del fuego, la plataforma **evalúa el estado físico del bosque** y **calcula en qué microcuencas hidrográficas bajará el barro**, identificando puntos estratégicos *antes* de que empiecen las lluvias.
 
 ```
-data/
-  config.py            AOI, fechas pre/post-fuego, umbral de quemado
-  search_download.py   busca y descarga GCOV + SME2 + Sentinel-1 en ASF
-  compute_change.py    diff de HV (dB) pre/post, suavizado -> burn_severity.tif
-  convert_sme2.py       SME2 (EASE-Grid, 200m) -> GeoTIFF alineado a burn_severity.tif
-  compute_slope.py      Copernicus DEM GLO-30 -> slope.tif alineado a burn_severity.tif
-  delineate_basins.py   DEM -> microcuencas reales (WhiteboxTools) -> basins.geojson
-  risk_index.py         quema x (pendiente + sequedad) -> riesgo por cuenca
-web/
-  index.html / app.js / style.css   slider óptico-vs-radar + mapa de riesgo
-  demo.html             maqueta sin datos reales, para probar la interacción
-  data/                 geojson/png generados por el pipeline (no se commitea)
-alerts/
-  __main__.py           CLI: check / run / serve / subscribe / unsubscribe / list / places
-  server.py             web + API para el capítulo 11 del StoryMap (story/alerts.js)
-  forecast.py           lluvia prevista (Open-Meteo) o escenario simulado
-  engine.py             nivel de alerta, volumen de escorrentía, no repetir avisos
-  geodata.py            cuencas y exposición de cada núcleo desde web/assets/data
-  report.py             informe del estudio en lenguaje llano (es/en)
-  compose.py            aviso de lluvia + render de texto y HTML (vecino o técnico)
-  mailer.py             envío SMTP o volcado a alerts/outbox/
+ OBSERVAR                    ANALIZAR                      PREVENIR
+ ───────────────             ───────────────────────       ─────────────────────────
+ Antes / después             Pendiente, humedad,           Simulador de lluvia
+ con radar NISAR      →      vegetación y microcuencas  →  y soluciones basadas
+ (óptico vs radar)           reales                        en la naturaleza (fajinas)
 ```
 
-## Datos confirmados (comprobado en vivo contra ASF el 2026-11-14)
+La aplicación se divide en **cuatro partes**:
 
-Esto no son fechas supuestas — se verificaron contra la API de búsqueda de
-ASF (`api.daac.asf.alaska.edu/services/search/param`, no necesita login):
+| # | Parte | Qué permite |
+|:-:|---|---|
+| 1 | **Antes y después** | Comparar el estado del terreno con un slider óptico vs. radar. |
+| 2 | **Análisis del terreno** | Estudiar pendientes, vegetación y humedad: lo que influye en cómo se mueve el agua. |
+| 3 | **Análisis de cuencas** | Identificar hacia dónde se dirige el agua y qué núcleos quedan aguas abajo. |
+| 4 | **Simulador de lluvia y soluciones** | Probar escenarios de lluvia y ver cómo ciertas medidas reducen el riesgo. |
 
-| Producto | Track/Frame | Antes | Después |
-|---|---|---|---|
-| NISAR GCOV | **15/23 (asc.) — usar este** | 2026-09-19 | 2026-10-01 |
-| NISAR GCOV | 124/68 (desc.) — descartado, ver abajo | 2026-09-14 | 2026-10-08 |
-| NISAR GCOV | 52/67 (desc.) | 2026-09-09 | 2026-10-15 |
-| NISAR GCOV | 124/67 (desc.) | 2026-09-14 | 2026-10-20 |
-| NISAR SME2 | mismos track/frame | ✓ disponible sep-oct | ✓ disponible sep-oct |
-| Sentinel-1 GRD | paths 147 (asc.) / 52 (desc.) | 48 escenas ago-nov, cada ~6 días | — |
+---
 
-**Perímetro real del incendio**, no un bbox: `data/raw/effis_perimeter_calvos_de_randin.geojson`,
-bajado de la WFS en vivo de EFFIS (`maps.effis.emergency.copernicus.eu/gwis`,
-capa `nrt.ba.poly`, `fire_id` 15925129, ignición 2026-09-24 12:32 — coincide
-con la hora real). Área según EFFIS: **1.234 ha** (su propia detección NRT
-automática, no coincide con los 518 ha oficiales de la Xunta — es una
-discrepancia conocida entre detección satelital automática y medición de
-extinción sobre el terreno; contadlo así en el pitch, no escondáis el número).
+## Antes y después del incendio
 
-**Probado y validado end-to-end (2026-11-14):**
-- Track 124/frame 68 (descendente) solo tiene dato válido en ~35% del
-  perímetro real — el borde de la rejilla geocodificada corta justo por
-  la zona del incendio. Descartado, no lo uséis.
-- Track 15/frame 23 (ascendente) cubre el **99,9%** del perímetro real.
-  Con el umbral de -1,5 dB en HV sin suavizar: 239 ha. Con el suavizado
-  de 100m que añadimos después (ver más abajo): **89 ha** — baja porque
-  buena parte de esos 239 ha eran speckle, no señal real (lo confirma que
-  cuencas sin incendio marcaban ~12-14% "quemado" antes de suavizar). 89 ha
-  frente a 518 oficiales y 1.234 de EFFIS: preséntalo como "núcleo de quema
-  severa en zona arbolada" (official: 370 ha arbolado + 148 ha pasto — el
-  pasto no da la misma firma en L-band), no como el área total quemada.
-- **Actualización multitemporal (2026-11-15):** el par `19-sep -> 01-oct`
-  subestimaba (87,5 ha) porque el `01-oct` coincidió con suelo húmedo (SME2
-  `0,18->0,23`, sesgo `+1,16 dB` en control). Al promediar en potencia lineal
-  las 5 pasadas pre QA-pass (`jul-sep`) vs las 2 post secas (`13` y `25-oct`)
-  con multilook 5×5 y calibración de control (`extract_aoi_stack.py` +
-  `build_story_data.py`), emergen **324,9 ha** (`FP=0,16%`, `F1=0,80` vs
-  Sentinel-2 dNBR `>=0,27`). El resto hasta 483-518 ha corresponde a quema
-  bajo copa donde la banda L HV no ve cambio estructural (`ΔHV ≈ -0,07 dB`).
+La comparación permite entender cómo ha cambiado el territorio y qué zonas necesitan un análisis más detallado.
 
-**Ya descargado y procesado**: el par track 15/frame 23 (GCOV + SME2,
-~4,1 GB), el perímetro de EFFIS, el DEM de Copernicus (GLO-30, bucket
-público de AWS, sin login) y las 26 microcuencas reales delineadas desde
-ese DEM — todo en `data/raw/`. `data/out/burn_severity.tif`,
-`data/raw/soil_moisture.tif`, `data/raw/slope.tif` y `data/out/risk_index.tif`
-generados y verificados. Falta solo `data/raw/assets.geojson` (núcleos/
-embalses de OSM) para que `risk_index.py` escriba el geojson final para
-la web.
+|  Antes del incendio — *¿cómo era el terreno?* |  Después del incendio — *¿qué ha cambiado?* |
+|---|---|
+| La vegetación y las zonas forestales | Zonas con cambios compatibles con pérdida de vegetación |
+| La estructura del bosque | La superficie afectada |
+| La forma y la altura del terreno | Áreas donde el suelo ha quedado más expuesto |
+| La humedad del suelo disponible | Pendientes que favorecen erosión y arrastre de materiales |
 
-**Riesgo por cuenca, validado (2026-11-14):** las cuencas 8 y 9 — las que
-contienen el incendio real — salen en el puesto **#1 y #2 de 26** por
-riesgo medio, con >20x de margen sobre la tercera. No fue automático;
-hicieron falta dos correcciones:
-- **Suavizado antes de umbralizar.** El diff de HV crudo a 20m tiene
-  speckle suficiente para que el umbral de -1,5 dB marque ~12-14% de
-  "quemado" en cuencas que el fuego nunca tocó. `compute_change.py`
-  ahora aplica un boxcar de 100m (NaN-aware) antes de umbralizar —
-  práctica estándar en SAR que me había saltado.
-- **Multiplicar, no sumar.** La fracción de área quemada por cuenca es
-  pequeña (máx ~1,6%) comparada con pendiente/sequedad normalizadas
-  (0–1), así que en una suma ponderada quedaba aplastada. `risk_index.py`
-  ahora usa `riesgo = quemado × (pendiente + sequedad)`: sin quema no hay
-  riesgo elevado, sin importar lo empinado o seco que esté el terreno.
+---
 
-## Pipeline de datos (equipo de datos)
+## Radar para humanos
 
-**Todos los comandos siguientes se ejecutan desde la raíz del repo, no
-desde dentro de `data/`.** `RAW_DIR`/`OUT_DIR` en `config.py` y las rutas
-de `risk_index.py` son relativas a la raíz (`data/raw`, `data/out`,
-`web/data/...`) — si entráis en `data/` primero, todo se descarga uno
-nivel de más abajo, en `data/data/raw/`.
+<details open>
+<summary><b>¿Qué es un radar SAR? El «murciélago» espacial </b></summary>
 
-1. `python3 -m venv data/.venv && data/.venv/bin/pip install -r data/requirements.txt`
-2. Credenciales de Earthdata (solo para descargar, no para buscar):
-   crea una cuenta gratis en `urs.earthdata.nasa.gov`, autoriza la app de
-   ASF (visita `https://urs.earthdata.nasa.gov/approve_app?client_id=BO_n7nTIlMljdvU6kRRB3g`
-   y acepta el EULA — si no, la descarga falla con un 403 "EULA Acceptance
-   Failure"), y luego pon el token en una variable de entorno de tu
-   terminal, nunca en un archivo del repo ni pegado en un chat:
-   `export EARTHDATA_TOKEN=...` (o `EARTHDATA_USERNAME`/`EARTHDATA_PASSWORD`,
-   o un `~/.netrc` con la entrada de `urs.earthdata.nasa.gov`).
-3. `data/.venv/bin/python3 data/search_download.py` — busca GCOV y SME2
-   (empareja track/frame igual en pre y post) y lista la serie de
-   Sentinel-1 GRD. Descarga automáticamente los pares de GCOV/SME2;
-   Sentinel-1 se lista pero no se descarga entero por defecto (escenas de
-   ~1 GB+ cada una) — elegid 2-3 fechas concretas.
-4. `data/.venv/bin/python3 data/compute_change.py data/raw/<pre.h5> data/raw/<post.h5>`
-   — usad el par de track 15/frame 23 (19-sep / 1-oct, ya descargado y ya
-   generado en `data/out/burn_severity.tif`; banda 1: diff HV en dB,
-   banda 2: máscara de quemado). Para sacar estadísticas de verdad,
-   recortad con `data/raw/effis_perimeter_calvos_de_randin.geojson`
-   (`rasterio.mask.mask`), no con `AOI_BBOX` — el bbox sobreestima ~4,5x.
-5. `data/.venv/bin/python3 data/convert_sme2.py data/raw/<sme2_post.h5> data/out/burn_severity.tif data/raw/soil_moisture.tif`
-   — ya hecho con el SME2 del 1-oct: `data/raw/soil_moisture.tif`, reproyectado
-   de EASE-Grid2 (EPSG:6933, 200m) a la rejilla de `burn_severity.tif`.
-   Dentro del perímetro real: 0,175–0,293 m³/m³, media 0,225.
-6. `data/.venv/bin/python3 data/compute_slope.py data/raw/<dem.tif> data/out/burn_severity.tif data/raw/slope.tif`
-   — ya hecho con el tile Copernicus GLO-30 que cubre el AOI
-   (`https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N41_00_W008_00_DEM/...tif`,
-   público, sin login). Pendiente media dentro del perímetro real: 11,1°.
-7. `data/.venv/bin/python3 data/delineate_basins.py data/raw/<dem_sin_predictor>.tif data/raw/hydro data/raw/basins.geojson`
-   — ya hecho: 26 microcuencas reales (WhiteboxTools: fill → D8 → acumulación
-   → red de drenaje → subbasins → vectorizar), umbral de 10.000 celdas
-   ajustado para que el incendio caiga en 2 cuencas, no en 23. **Nota:** el
-   GeoTIFF de Copernicus usa un predictor de compresión que WhiteboxTools no
-   lee — hay que reescribirlo con rasterio (`compress='lzw', predictor=1`)
-   antes de pasárselo, y `set_working_dir()` necesita ruta absoluta o falla
-   en silencio.
-8. Consigue por tu cuenta (no está en este repo, no sale de ninguna API):
-   - `data/raw/assets.geojson` — núcleos/embalses aguas abajo (OSM):
-     Randín, Calvos de Randín, As Meaus (Baltar), Baltar
-9. `data/.venv/bin/python3 data/risk_index.py` — escribe `web/data/basins_risk.geojson`.
-10. Exporta la severidad a PNG para el slider:
-    `gdal_translate -of PNG -scale data/out/burn_severity.tif web/data/severity.png`
+Una cámara normal es **pasiva**: necesita la luz del Sol. Un radar de apertura sintética (SAR) es **activo**: emite sus propios pulsos de microondas hacia la Tierra y mide el eco que vuelve (*retrodispersión*). Por eso ve **de día, de noche y a través de nubes y humo**.
+</details>
 
-## Web (StoryMap + exploradores)
+<details open>
+<summary><b>La ventaja de la Banda L</b></summary>
 
-El punto de entrada principal (`web/index.html`) es un **informe narrativo estilo StoryMap** en 11 capítulos sobre el incendio de Calvos de Randín (Ourense, sep 2026) con la serie temporal completa de NISAR desde junio de 2026, comparativa óptico-vs-radar, sensibilidad multinivel en `dB` (`-1.5` / `-3.0` / `-6.0 dB`), cruce con coberturas ESA WorldCover, riesgo hidrogeomorfológico por microcuenca y simulación dinámica de escorrentía:
+NISAR usa una longitud de onda larga (**~24 cm**) que no rebota en las hojas pequeñas: atraviesa el follaje e interactúa con **ramas gruesas, troncos y suelo**. Es la estructura del bosque lo que «oye» el satélite.
+</details>
+
+<details open>
+<summary><b>¿Cómo sabemos que el bosque se quemó? Polarización HV</b></summary>
+
+- **Bosque sano:** las microondas rebotan en mil direcciones entre las ramas (como una bola de *pinball*) → eco **brillante** en `HV` (dispersión volumétrica).
+- **Tras el fuego:** las copas desaparecen, el «pinball» 3D se desvanece y el eco **cae bruscamente** (`ΔHV`). GeoSignal mide esa caída de energía para localizar la destrucción real.
+
+| `ΔHV = post − pre` | Significado |
+|---|---|
+| `0 dB` | Sin cambio |
+| `−1,5 dB` | Caída de ~29 % de la energía (umbral estándar de quema en Banda L) |
+| `−3,0 dB` | Caída del 50 % de la señal estructural |
+| `−6,0 dB` | Caída del 75 % (calcinación extrema del dosel) |
+</details>
+
+<details>
+<summary><b>Ruido <i>speckle</i> («sal y pimienta»)</b></summary>
+
+Las imágenes radar tienen un ruido visual parecido al de los televisores antiguos. GeoSignal aplica un suavizado espacial de ~100 m (multilook) **antes** de umbralizar, lo que elimina falsos positivos: sin él, cuencas que nunca ardieron marcaban un 12–14 % de «quemado».
+</details>
+
+<details>
+<summary><b>Las misiones: NISAR y Sentinel-1</b></summary>
+
+- **NISAR (NASA-ISRO):** primer radar de doble frecuencia (Banda L ~24 cm + Banda S ~10 cm). Repite su órbita cada **12 días**, aunque la frecuencia real de escenas varía según la zona.
+- **Sentinel-1 (Copernicus):** otro radar (Banda C) que complementa a NISAR y permite comparar cambios en el tiempo.
+
+| Producto | Qué aporta |
+|---|---|
+| `GCOV` | Retrodispersión calibrada (`HH`, `HV`): estructura de la vegetación y cambios pre/post incendio. |
+| `SME2` | Humedad superficial del suelo (200 m): dato complementario sobre las condiciones del terreno. |
+</details>
+
+---
+
+## Cómo funciona
+
+El análisis se realiza en **cuatro pasos**:
+
+```mermaid
+flowchart LR
+    A[NISAR GCOV + SME2<br/>Sentinel-1 · DEM] --> B[A · Severidad de quema<br/>ΔHV suavizado]
+    A --> C[B · Pendiente<br/>y humedad del suelo]
+    A --> D[C · Microcuencas<br/>reales del DEM]
+    B --> E[D · Índice de riesgo<br/>por microcuenca]
+    C --> E
+    D --> E
+    E --> F[Simulación de<br/>escorrentía]
+    F --> G[ StoryMap web<br/>+  alertas]
+```
+
+### A · Localizar las zonas afectadas
+Se descargan las escenas NISAR (antes y después) y se compara la señal `HV` con suavizado espacial para delimitar dónde el bosque o el matorral perdieron estructura. **Resultado:** un mapa de zonas afectadas y comparativa pre/post.
+
+### B · Analizar el terreno
+No todas las zonas quemadas tienen el mismo riesgo. Se estudian **pendiente**, **altitud**, **pérdida de vegetación**, **humedad del suelo** y **tipo de terreno** a partir de satélite y modelos digitales de elevación.
+
+### C · Dividir el terreno en cuencas
+Una **cuenca hidrográfica** es la zona donde el agua de lluvia acaba dirigiéndose a un mismo río, arroyo o punto de salida: como un **embudo**. Si se quema una montaña, la lluvia baja por sus laderas, arrastra tierra y ceniza hasta un arroyo, de ahí a un río y, finalmente, a un pueblo situado más abajo. Por eso no basta con saber dónde se quemó: hay que saber **hacia dónde se desplazará el agua**.
+
+A partir del modelo digital de elevación se calcula hacia dónde fluye y dónde se acumula el agua, y se delimitan **26 microcuencas reales**. Esto permite saber de dónde procede el agua de cada cauce, qué zonas quemadas envían sedimento al mismo lugar y qué poblaciones quedan aguas abajo.
+
+### D · Calcular el riesgo potencial
+
+```
+Riesgo = Severidad de quema × (Pendiente + Sequedad del suelo)
+```
+
+Multiplicar (y no sumar) evita falsas alarmas: **una montaña muy empinada que no se quemó no marca riesgo**; solo las zonas quemadas, empinadas y con suelo seco alcanzan la prioridad máxima.
+
+| Factor | ¿Por qué importa? |
+|---|---|
+| Superficie quemada | Dónde se perdió la vegetación que protegía el suelo |
+| Pendiente | Las laderas inclinadas aceleran agua y sedimentos |
+| Humedad / sequedad del suelo | Condición del terreno antes de llover |
+| Cuenca hidrográfica | Hacia dónde se dirige el agua |
+| Lluvia | Cómo cambia el escenario según la intensidad |
+
+| Nivel | Significado |
+|---|---|
+| 🟢 **Riesgo bajo** | Condiciones menos favorables para generar escorrentía y erosión. |
+| 🟡 **Riesgo medio** | Se combinan algunos factores que pueden favorecer estos procesos. |
+| 🔴 **Riesgo alto** | Coinciden varios factores desfavorables; requieren especial atención. |
+
+En el caso de estudio, las cuencas 8 y 9, que contienen el incendio real, salen en el **puesto #1 y #2 de 26**, con más de 20× de margen sobre la tercera.
+
+---
+
+## Resultados y honestidad científica
+
+> El jurado —y la ciencia— penalizan las afirmaciones exageradas. Mostramos **todas** las cifras, también las incómodas.
+
+| Fuente | Superficie | Qué mide |
+|---|---:|---|
+| Perímetro oficial (Xunta de Galicia) | **~518 ha** | 370 ha arbolado + 148 ha pasto/matorral |
+| Copernicus EFFIS (detección térmica NRT) | **1.234 ha** | Detección automática, sobrestima |
+| Sentinel-2 `dNBR ≥ 0,27` (referencia óptica) | **483,12 ha** | Cicatriz óptica |
+| NISAR, par único húmedo (`19-sep` vs `01-oct`) | **87,5 ha** | Sesgado por subida de humedad (`+1,16 dB` en control, `qa_pass: false`) |
+| **NISAR, compuesto multitemporal lineal** | **324,88 ha** | 5 pasadas secas pre vs `13` + `25-oct`, multilook 5×5, calibración de control a `−1,5 dB` · `FP = 0,16 %` · precisión `0,993` · **`F1 = 0,799`** vs `dNBR` |
+
+### ¿Qué ve y qué *no* ve la Banda L?
+
+Cruzando `ΔHV` con **ESA WorldCover 2021**:
+
+- **Matorral y pasto abierto** (en Galicia, monte bajo/tojo): detección muy precisa — **247,5 ha**.
+- **Fuego de superficie bajo copa intacta:** apenas atenúa el volumen superior — solo **63,6 ha** detectadas de **576,3 ha**; `ΔHV ≈ −0,07 dB` en las **98,84 ha** omitidas con `dNBR ≥ 0,27`.
+
+**Por tanto:** GeoSignal **no** afirma que NISAR aísle «quema severa en masa arbolada» ni que mida la hidrofobicidad del suelo (el radar no detecta química). Lo que sí hace es combinar **pérdida de copa (`ΔHV`) + sequedad (`SME2`) + pendiente (`DEM`)** en un **índice físico de susceptibilidad de escorrentía y arrastre**.
+
+### Qué es real y qué no
+Área quemada, microcuencas, ranking y distancias salen del pipeline. La lluvia es pronóstico de modelo; el volumen de escorrentía usa un coeficiente `C = 0,6` y los umbrales de alerta **no están calibrados sobre el terreno**: deben ajustarse con Protección Civil / AEMET antes de cualquier uso operativo.
+
+---
+
+## La aplicación web
+
+El punto de entrada (`web/index.html`) es un **StoryMap de 11 capítulos** con:
+
+-  Serie temporal completa de NISAR desde junio de 2026
+-  Comparativa **óptico (cegado por el humo) vs. radar (nítido)**
+-  Sensibilidad multinivel en dB (`−1,5` / `−3,0` / `−6,0`)
+-  Cruce con coberturas ESA WorldCover
+-  Riesgo hidrogeomorfológico por microcuenca y núcleos aguas abajo (**As Meaus, Calvos, Guntumil**…)
+-  Simulación dinámica de escorrentía
+-  Capítulo 11: alertas por correo
 
 ```bash
-devenv up   # o: cd web && python -m http.server 8000
-# -> http://localhost:8000/
+# Solo la web (estática)
+cd web && python -m http.server 8000      # → http://localhost:8000/
 
-# con el capítulo de alertas activo (desde la raíz del repo):
-python3 -m alerts serve   # -> http://127.0.0.1:8765/
+# Web + capítulo de alertas activo (desde la raíz del repo)
+python3 -m alerts serve                   # → http://127.0.0.1:8765/
 ```
 
-El explorador técnico original sigue disponible en `web/real_demo.html`. Para regenerar los insumos ligeros (`web/assets/data/`) desde las escenas `.h5` locales:
+El explorador técnico original sigue en `web/real_demo.html`. Para regenerar los insumos ligeros (`web/assets/data/`) desde las escenas `.h5` locales:
 
 ```bash
 python data/extract_aoi_stack.py
@@ -168,121 +242,176 @@ python data/build_story_data.py
 python data/validate_story_data.py
 ```
 
-## Alertas por correo (`alerts/`)
+>  **Filosofía:** nada de procesar gigabytes en vivo. El preprocesamiento científico es reproducible en local (Python) y genera capas ligeras (`.geojson`, `.png`) servidas por una web estática, rápida e interactiva.
 
-Manda dos tipos de correo, los dos escritos para vecinos y sin
-tecnicismos:
+---
 
-- **Informe del estudio.** Lo recibe cada persona al suscribirse: cuánto
-  se quemó según cada fuente, por qué se usó radar, qué tipo de terreno
-  ardió, por dónde puede bajar el agua, qué da el simulador de lluvia para
-  20 / 40 / 80 l/m², dónde convendrían barreras y qué significa para su
-  pueblo. Solo se reenvía si se regeneran los datos del estudio.
-- **Aviso de lluvia.** Solo cuando la previsión real alcanza el nivel que
-  eligió la persona. Los simulacros no se envían nunca por correo.
+## Simulador de lluvia y soluciones
 
-Solo
-usa la biblioteca estándar de Python (no necesita `data/.venv`) y lee los
-mismos insumos que la web (`web/assets/data/`). Se ejecuta desde la raíz
-del repo, como el pipeline.
+### «¿Qué pasaría si llueve?»
+Un control deslizante cambia la intensidad de la lluvia y la app muestra cómo cambia el escenario:
 
-Qué hace en cada ejecución:
+| 10 mm/h | 30 mm/h | 50 mm/h | 80 mm/h |
+|:-:|:-:|:-:|:-:|
 
-1. Pide a Open-Meteo (gratis, sin clave) la lluvia horaria de los próximos
-   3 días en el centro del perímetro del incendio.
-2. Asigna un nivel por día: amarillo / naranja / rojo si la lluvia en 24 h
-   llega a 20 / 40 / 80 mm o la intensidad horaria a 10 / 20 / 40 mm/h.
-3. Escribe un correo distinto para cada suscriptor (texto + HTML, en
-   español o inglés) y lo envía por SMTP. El correo está escrito para
-   vecinos: litros por metro cuadrado, exposición alta/media/baja de su
-   núcleo y qué hacer. El perfil `technical` añade al final las cifras
-   (hectáreas, m³, microcuencas, candidatas a barrera).
+Al aumentar la intensidad se visualiza **por dónde se desplaza el agua**, **qué zonas acumulan más escorrentía**, **qué cauces reciben las laderas quemadas** y **qué poblaciones e infraestructuras quedan aguas abajo**.
+
+### Soluciones basadas en la naturaleza
+Las **fajinas** son barreras de troncos y restos vegetales que se colocan sobre el terreno para frenar el agua y retener sedimento. La app compara dos escenarios:
+
+- **Sin soluciones:** cómo podría desplazarse el agua por el terreno quemado.
+- **Con soluciones:** barreras en zonas seleccionadas y cómo cambian el recorrido del agua y la acumulación de sedimento.
+
+---
+
+## Alertas por correo
+
+Módulo `alerts/` (solo biblioteca estándar de Python). Envía dos tipos de correo, escritos para vecinos y sin tecnicismos:
+
+- **Informe del estudio** — al suscribirse: cuánto se quemó según cada fuente, por qué radar, por dónde puede bajar el agua, qué pasa con 20 / 40 / 80 l/m² y qué significa para su pueblo.
+- **Aviso de lluvia** — solo cuando la previsión real (Open-Meteo, 3 días) alcanza el nivel elegido: amarillo / naranja / rojo con 20 / 40 / 80 mm en 24 h o 10 / 20 / 40 mm/h.
 
 ```bash
 python3 -m alerts places                      # núcleos y su exposición
 python3 -m alerts subscribe ana@ejemplo.org --name Ana --place "As Meaus"
 python3 -m alerts subscribe pc@ejemplo.org --profile technical --min-level 2
 python3 -m alerts check                       # nivel con el pronóstico real
-python3 -m alerts report                      # informe del estudio, en seco -> alerts/outbox/*.html
+python3 -m alerts report                      # informe en seco → alerts/outbox/*.html
 python3 -m alerts run                         # informes pendientes + avisos, en seco
 python3 -m alerts run --send                  # envía de verdad (lo que ejecuta cron)
-python3 -m alerts report --send --force       # reenvía el informe a todos
-python3 -m alerts run --rain-mm 60            # vista previa de cómo se vería un aviso con 60 mm
+python3 -m alerts run --rain-mm 60            # vista previa con 60 mm (nunca se envía)
 python3 -m alerts unsubscribe ana@ejemplo.org
 ```
 
-**En la web.** `python3 -m alerts serve` sirve `web/` en
-`http://127.0.0.1:8765/` con una API mínima, y activa el capítulo
-«11 · Alertas por correo» al final del StoryMap: nivel de hoy, formulario
-de suscripción y vista previa del informe que recibiría cada persona
-(cambia con el pueblo elegido). Con un servidor
-estático (`python -m http.server`) el capítulo solo muestra un aviso. Antes
-de publicarlo fuera de localhost: la suscripción no pide confirmación por
-correo (cualquiera puede apuntar cualquier dirección) y no hay límite de
-peticiones.
+<details>
+<summary><b>Configuración SMTP, cron y notas de seguridad</b></summary>
 
-Sin `--send` no sale ningún correo: se escriben un `.eml` y un `.html` por
-suscriptor en `alerts/outbox/` para revisarlos en el navegador. `--rain-mm`
-solo sirve para esa vista previa; combinado con `--send` se rechaza.
-
-**Envío con Gmail** (el proveedor por defecto). Copia `.env.example` a
-`.env` en la raíz (ya está en `.gitignore`) y rellena dos líneas:
+**Gmail (por defecto).** Copia `.env.example` a `.env` (ya en `.gitignore`):
 
 ```bash
 ALERTS_SMTP_USER=cuenta-que-envia@gmail.com
 ALERTS_SMTP_PASSWORD=xxxx xxxx xxxx xxxx   # contraseña de aplicación, no la normal
 ```
 
-La contraseña de aplicación se crea en
-`https://myaccount.google.com/apppasswords` (la cuenta necesita la
-verificación en dos pasos activada). Gmail limita a unos 500 destinatarios
-al día en cuentas gratuitas. Para otro proveedor, define además
-`ALERTS_SMTP_HOST` / `ALERTS_SMTP_PORT` / `ALERTS_SMTP_SECURITY`; el resto
-de variables opcionales está en `.env.example`.
+Se crea en `https://myaccount.google.com/apppasswords` (requiere verificación en dos pasos). Gmail limita a ~500 destinatarios/día. Para otro proveedor define `ALERTS_SMTP_HOST` / `ALERTS_SMTP_PORT` / `ALERTS_SMTP_SECURITY`.
 
-Prueba a una sola dirección ya suscrita:
-
-```bash
-python3 -m alerts report --only alguien@ejemplo.org --send --force
-```
-
-**Automatizarlo**: una línea de cron, por ejemplo cada 3 horas:
+**Cron cada 3 horas:**
 
 ```
 0 */3 * * * cd /ruta/a/GeoSignal && python3 -m alerts run --send >> alerts/cron.log 2>&1
 ```
 
-`alerts/state.json` recuerda qué versión del informe y qué episodio de
-lluvia recibió ya cada dirección, así que el cron no repite correos; si el nivel sube para el
-mismo día (amarillo → naranja) sí vuelve a avisar.
+`alerts/state.json` evita repetir correos; si el nivel sube para el mismo día, sí vuelve a avisar.
 
-**Qué es real y qué no.** Área quemada, microcuencas, ranking, distancias
-a los cauces y candidatas a barrera salen del pipeline. La lluvia es un
-pronóstico de modelo. El volumen de escorrentía usa `C = 0,6`, el mismo
-supuesto que el simulador de la web (120 mm dan los mismos 269.021 m³), y
-los umbrales de nivel están en `alerts/config.py` sin calibrar sobre el
-terreno: ajustadlos con Protección Civil / AEMET antes de usarlo fuera de
-una demo. Cada correo dice que es un sistema experimental y remite a los
-avisos oficiales y al 112.
+**Antes de publicar fuera de localhost:** la suscripción no pide confirmación por correo y no hay límite de peticiones. `subscribers.json`, `state.json` y `outbox/` no se commitean (datos personales). Pruebas:
 
-`alerts/subscribers.json`, `alerts/state.json` y `alerts/outbox/` no se
-commitean (son datos personales y salidas locales); el formato está en
-`alerts/subscribers.example.json`. Pruebas:
-`python3 -m unittest discover -s alerts/tests -t .`
+```bash
+python3 -m unittest discover -s alerts/tests -t .
+```
+</details>
 
-## Validación mínima antes de construir sobre esto
+---
 
-- El umbral de -1.5 dB en HV es el que dio ~0.70 de precisión en el
-  estudio de Bobcat citado en el pitch, pero aquí da 239 ha frente a 518
-  oficiales — tratadlo como punto de partida, no como verdad asumida.
-  Antes de confiar en el número para el pitch, probad a bajar el umbral
-  (p.ej. a -1.0 dB) y ved si os acerca más a 518 ha sin disparar los
-  falsos positivos fuera del perímetro.
-- Al recortar por el perímetro real comprobamos que el par de track/frame
-  importa mucho para la cobertura (35% vs 99,9% de dato válido dentro del
-  perímetro) — comprobad siempre `valid_px / expected_px` antes de confiar
-  en un porcentaje de quemado.
-- Si la imagen "post" cae en un día de lluvia, la retrodispersión del
-  suelo sube y puede enmascarar la caída de HV. El par usado (19-sep /
-  1-oct) es una ventana corta a propósito por esto. Si cambiáis de par,
-  preferid ventanas cortas y en seco, o usad el cociente HV/HH.
+## Estructura del repositorio
+
+```
+data/
+  config.py              AOI, fechas pre/post-fuego, umbral de quemado
+  search_download.py     busca y descarga GCOV + SME2 + Sentinel-1 en ASF
+  compute_change.py      diff de HV (dB) pre/post, suavizado → burn_severity.tif
+  convert_sme2.py        SME2 (EASE-Grid, 200 m) → GeoTIFF alineado
+  compute_slope.py       Copernicus DEM GLO-30 → slope.tif alineado
+  delineate_basins.py    DEM → microcuencas (WhiteboxTools) → basins.geojson
+  risk_index.py          quema × (pendiente + sequedad) → riesgo por cuenca
+  extract_aoi_stack.py   pila multitemporal recortada al AOI
+  build_story_data.py    capas ligeras para el StoryMap
+  validate_story_data.py comprobaciones de los datos de la web
+web/
+  index.html             StoryMap de 11 capítulos (entrada principal)
+  real_demo.html         explorador técnico original
+  demo.html              maqueta sin datos reales
+  assets/ story/ vendor/ recursos, capítulos y librerías
+alerts/
+  __main__.py            CLI: check / run / serve / subscribe / unsubscribe / list / places
+  server.py · forecast.py · engine.py · geodata.py
+  report.py · compose.py · mailer.py
+```
+
+---
+
+## Pipeline de datos
+
+> **Ejecuta todo desde la raíz del repo**, no desde `data/` (las rutas `data/raw`, `data/out`, `web/data/...` son relativas a la raíz).
+
+<details>
+<summary><b>Pasos detallados (equipo de datos)</b></summary>
+
+1. **Entorno:** `python3 -m venv data/.venv && data/.venv/bin/pip install -r data/requirements.txt`
+2. **Credenciales Earthdata** (solo para descargar): cuenta gratuita en `urs.earthdata.nasa.gov`, aprobar la app de ASF (`https://urs.earthdata.nasa.gov/approve_app?client_id=BO_n7nTIlMljdvU6kRRB3g`, o la descarga falla con 403 *EULA Acceptance Failure*) y exportar `EARTHDATA_TOKEN` (o `EARTHDATA_USERNAME`/`EARTHDATA_PASSWORD`, o `~/.netrc`). **Nunca** en un archivo del repo.
+3. **Buscar y descargar:** `data/.venv/bin/python3 data/search_download.py` — empareja track/frame en pre y post y lista Sentinel-1 GRD (no lo descarga entero: ~1 GB por escena).
+4. **Severidad:** `python3 data/compute_change.py data/raw/<pre.h5> data/raw/<post.h5>` → `data/out/burn_severity.tif` (banda 1: ΔHV en dB; banda 2: máscara de quemado). Para estadísticas, recortar con el perímetro EFFIS (`rasterio.mask.mask`), **nunca con `AOI_BBOX`** (sobrestima ~4,5×).
+5. **Humedad:** `python3 data/convert_sme2.py <sme2_post.h5> data/out/burn_severity.tif data/raw/soil_moisture.tif` (EPSG:6933 → rejilla de severidad).
+6. **Pendiente:** `python3 data/compute_slope.py <dem.tif> data/out/burn_severity.tif data/raw/slope.tif` (tile Copernicus GLO-30, público en AWS, sin login).
+7. **Microcuencas:** `python3 data/delineate_basins.py <dem_sin_predictor>.tif data/raw/hydro data/raw/basins.geojson` — 26 cuencas reales; umbral de 10.000 celdas. El GeoTIFF de Copernicus usa un predictor que WhiteboxTools no lee: reescribirlo con rasterio (`compress='lzw', predictor=1`); `set_working_dir()` necesita ruta absoluta.
+8. **Activos aguas abajo:** aportar `data/raw/assets.geojson` (OSM: Randín, Calvos de Randín, As Meaus/Baltar, Baltar).
+9. **Riesgo:** `python3 data/risk_index.py` → `web/data/basins_risk.geojson`.
+10. **PNG para el slider:** `gdal_translate -of PNG -scale data/out/burn_severity.tif web/data/severity.png`.
+</details>
+
+<details>
+<summary><b>Escenas NISAR verificadas contra ASF (2026-11-14)</b></summary>
+
+| Producto | Track/Frame | Antes | Después |
+|---|---|---|---|
+| NISAR GCOV | **15/23 (asc.) — el usado** | 2026-09-19 | 2026-10-01 |
+| NISAR GCOV | 124/68 (desc.) — descartado | 2026-09-14 | 2026-10-08 |
+| NISAR GCOV | 52/67 (desc.) | 2026-09-09 | 2026-10-15 |
+| NISAR GCOV | 124/67 (desc.) | 2026-09-14 | 2026-10-20 |
+| NISAR SME2 | mismos track/frame |  sep–oct |  sep–oct |
+| Sentinel-1 GRD | paths 147 (asc.) / 52 (desc.) | 48 escenas ago–nov, cada ~6 días | — |
+
+El track 124/68 solo cubre ~35 % del perímetro real; el 15/23 cubre el **99,9 %**.
+</details>
+
+<details>
+<summary><b>Validación mínima antes de construir sobre esto</b></summary>
+
+- Comprueba siempre `valid_px / expected_px` dentro del perímetro antes de confiar en un porcentaje de quemado.
+- Una imagen «post» en día de lluvia sube la retrodispersión del suelo y enmascara la caída de `HV`; prefiere ventanas secas o el cociente `HV/HH`.
+- Verifica la alineación de proyecciones (`EPSG`) y rejillas antes de operar entre rásteres.
+- Los archivos pesados (`.h5`, `.tif`) no se versionan.
+</details>
+
+---
+
+## Escalabilidad y futuro
+
+- **Replicable hoy:** el 27 de octubre de 2026 el Gobierno de España declaró **Calvos de Randín (Ourense)** y **Quiroga (Lugo, Ribeira Sacra)** *Zonas Afectadas Gravemente por una Emergencia de Protección Civil*. El pipeline es aplicable a ambos.
+- **Sinergia espacial ibérica:** NISAR (radiografía estructural cada 12 días) + **Constelación Atlántica** (PERTE Aeroespacial España-Portugal: 16 microsatélites con revisita de ~3 h, reflectometría GNSS-R en Banda L para humedad rápida) + sensores IoT pluviométricos en las microcuencas.
+- **Multifrecuencia:** SAOCOM (CONAE, Banda L) para series históricas y RADARSAT Constellation (CSA, Banda C) para contraste.
+- **Otras aplicaciones de NISAR:** subsidencia e inundaciones (`GUNW`), glaciares, agricultura y gestión hídrica.
+
+---
+
+## Fuentes de datos
+
+| Fuente | Uso |
+|---|---|
+| **NISAR** (NASA-ISRO) vía ASF | `GCOV` (retrodispersión HH/HV), `SME2` (humedad del suelo) |
+| **Sentinel-1** (Copernicus) | Complemento SAR |
+| **Sentinel-2 / HLS** | Referencia óptica (`dNBR`) y comparativa con humo |
+| **Copernicus DEM GLO-30** | Pendiente y microcuencas |
+| **Copernicus EFFIS** | Perímetro NRT del incendio (`nrt.ba.poly`) |
+| **ESA WorldCover 2021** | Tipo de cobertura quemada |
+| **Open-Meteo** | Pronóstico de lluvia para las alertas |
+| **OpenStreetMap** | Núcleos y embalses aguas abajo |
+
+---
+
+<div align="center">
+
+**GeoSignal** · NASA Space Apps Challenge — *Dancing with the SARs*
+
+*Porque el riesgo no termina cuando se apagan las llamas.*
+
+</div>
