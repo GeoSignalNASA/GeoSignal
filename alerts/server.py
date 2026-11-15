@@ -159,6 +159,10 @@ class AlertService:
 class Handler(SimpleHTTPRequestHandler):
     service = None  # set by make_server
 
+    def guess_type(self, path):
+        t = super().guess_type(path)
+        return "text/html; charset=utf-8" if t == "text/html" else t
+
     def _is_local(self):
         try:
             return ipaddress.ip_address(self.client_address[0]).is_loopback

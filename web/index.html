@@ -38,7 +38,7 @@
     </nav>
     <div class="topbar-actions">
       <button class="btn-ghost" id="btn-lang" type="button" data-i18n="langBtn">EN</button>
-      <button class="btn-ghost" id="btn-print" type="button" data-i18n="printBtn">Imprimir / PDF</button>
+      <button class="btn-ghost" id="btn-print" type="button" data-i18n="printBtn">PDF</button>
     </div>
   </header>
   <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
@@ -114,7 +114,7 @@
       </section>
 
       <details class="glossary intro-glossary">
-        <summary>Qué significan las siglas de esta introducción</summary>
+        <summary data-i18n="glossIntro">Qué significan las siglas de esta introducción</summary>
         <dl data-i18n-html="heroGloss">
           <dt>ha (hectárea)</dt><dd>Unidad de superficie. 1 ha = 100 × 100 m, como un campo de fútbol y medio.</dd>
           <dt>dB (decibelio)</dt><dd>Mide cuánta señal de radar vuelve al satélite. Cuanto más bajo (más negativo), menos vegetación queda.</dd>
@@ -139,7 +139,7 @@
           <strong>OpenStreetMap</strong> (el mapa colaborativo y libre).
         </p>
         <details class="glossary">
-          <summary>Qué significan las siglas de este apartado</summary>
+          <summary data-i18n="glossSection">Qué significan las siglas de este apartado</summary>
           <dl data-i18n-html="c1Gloss">
             <dt>ha (hectárea)</dt><dd>Unidad de superficie. 1 ha = 100 × 100 m.</dd>
             <dt>EFFIS</dt><dd>Servicio europeo de detección automática de incendios por satélite.</dd>
@@ -175,7 +175,7 @@
           el <strong>50 %</strong>; <code>−6 dB</code>, el <strong>75 %</strong>.
         </div>
         <details class="glossary">
-          <summary>Qué significan las siglas de este apartado</summary>
+          <summary data-i18n="glossSection">Qué significan las siglas de este apartado</summary>
           <dl data-i18n-html="c2Gloss">
             <dt>Banda L</dt><dd>Un tipo de onda de radar de unos 24 cm. Cuanto más larga la onda, mejor atraviesa el humo, las nubes y las hojas.</dd>
             <dt>HV / HH</dt><dd>Las dos formas en que el radar envía y recibe su señal. Cada una reacciona distinto según lo que haya debajo: HV a ramas y hojas, HH al suelo y los troncos.</dd>
@@ -203,7 +203,7 @@
           Las pasadas marcadas aparte en el gráfico corresponden a auditoría de estabilidad radiométrica (productos <em>Provisional</em>); se conservan con aviso explícito.
         </p>
         <details class="glossary">
-          <summary>Qué significan las siglas de este apartado</summary>
+          <summary data-i18n="glossSection">Qué significan las siglas de este apartado</summary>
           <dl data-i18n-html="c3Gloss">
             <dt>dB (decibelio)</dt><dd>Mide cuánta señal de radar vuelve al satélite. Cuanto más baja, más vegetación se ha perdido.</dd>
             <dt>SME2</dt><dd>El dato de humedad del suelo de NISAR (de su nombre en inglés, Soil Moisture).</dd>
@@ -236,7 +236,7 @@
           </div>
         </div>
         <details class="glossary">
-          <summary>Qué significan las siglas de este apartado</summary>
+          <summary data-i18n="glossSection">Qué significan las siglas de este apartado</summary>
           <dl data-i18n-html="c4Gloss">
             <dt>dNBR</dt><dd>Un índice calculado con fotos normales de satélite (no radar) que mide cuánto cambió el verdor de la vegetación. Lo usamos para comprobar que el radar acierta.</dd>
           </dl>
@@ -263,7 +263,7 @@
           (<code>ΔHV ≈ −0,07 dB</code> en la zona arbolada no detectada).
         </p>
         <details class="glossary">
-          <summary>Qué significan las siglas de este apartado</summary>
+          <summary data-i18n="glossSection">Qué significan las siglas de este apartado</summary>
           <dl data-i18n-html="c6Gloss">
             <dt>speckle</dt><dd>Granulado aleatorio propio de cualquier imagen de radar, no un fallo del satélite ni del terreno.</dd>
             <dt>ha (hectárea)</dt><dd>Unidad de superficie. 1 ha = 100 × 100 m.</dd>
@@ -309,7 +309,7 @@
           <div class="basin-card" id="basin-inspector" aria-live="polite" data-i18n="c7Prompt">Haz clic en una cuenca del mapa…</div>
         </div>
         <details class="glossary">
-          <summary>Qué significan las siglas de este apartado</summary>
+          <summary data-i18n="glossSection">Qué significan las siglas de este apartado</summary>
           <dl data-i18n-html="c7Gloss">
             <dt>dB (decibelio)</dt><dd>Mide la caída de señal de radar; cuanto más baja, más severo el daño exigido para contar una zona como "quemada" en este cálculo.</dd>
             <dt>Microcuenca</dt><dd>Una porción pequeña de terreno que recoge el agua de lluvia de sus laderas hacia un mismo arroyo.</dd>
@@ -348,7 +348,7 @@
           el agua se pare ahí de verdad.
         </div>
         <details class="glossary">
-          <summary>Qué significan las siglas de este apartado</summary>
+          <summary data-i18n="glossSection">Qué significan las siglas de este apartado</summary>
           <dl data-i18n-html="c8Gloss">
             <dt>mm (de lluvia)</dt><dd>Litros de agua por cada metro cuadrado. 20 mm = 20 litros por m².</dd>
             <dt>m³ (metro cúbico)</dt><dd>Unidad de volumen de agua. 1 m³ = 1.000 litros.</dd>
@@ -430,7 +430,7 @@
           <div id="chart-histogram"></div>
         </div>
         <details class="glossary">
-          <summary>Qué significan las siglas de este apartado</summary>
+          <summary data-i18n="glossSection">Qué significan las siglas de este apartado</summary>
           <dl data-i18n-html="c5Gloss">
             <dt>dB (decibelio)</dt><dd>Mide la caída de señal de radar. Cuanto más baja (más negativa), más daño.</dd>
             <dt>ΔHV (delta HV)</dt><dd>La diferencia entre la señal HV de antes y de después del incendio.</dd>
@@ -466,38 +466,43 @@
     <div class="eyebrow" data-i18n="c10Num">10 · Fuentes y equipo</div>
     <h2 data-i18n="c10Title">Fuentes del proyecto</h2>
 
-    <h3 data-i18n="c10NasaH">NASA Data</h3>
-    <ul class="source-list">
-      <li><a href="https://www.earthdata.nasa.gov/data/catalog/asf-nisar-l2-gcov-provisional-v1-1" target="_blank" rel="noopener">NISAR L2 GCOV (Geocoded Polarimetric Covariance)</a></li>
-      <li><a href="https://www.earthdata.nasa.gov/data/catalog/asf-nisar-l3-sme2-provisional-v1-1" target="_blank" rel="noopener">NISAR L3 SME2 (Soil Moisture)</a></li>
-      <li><a href="https://search.asf.alaska.edu/" target="_blank" rel="noopener">ASF DAAC Vertex / Data Search</a></li>
-      <li><a href="https://urs.earthdata.nasa.gov/" target="_blank" rel="noopener">NASA Earthdata Login</a></li>
-    </ul>
+    <details class="glossary sources-glossary" id="sources-details">
+      <summary data-i18n="c10Toggle">Ver fuentes y equipo</summary>
+      <div class="sources-body">
+        <h3 data-i18n="c10NasaH">NASA Data</h3>
+        <ul class="source-list">
+          <li><a href="https://www.earthdata.nasa.gov/data/catalog/asf-nisar-l2-gcov-provisional-v1-1" target="_blank" rel="noopener">NISAR L2 GCOV (Geocoded Polarimetric Covariance)</a></li>
+          <li><a href="https://www.earthdata.nasa.gov/data/catalog/asf-nisar-l3-sme2-provisional-v1-1" target="_blank" rel="noopener">NISAR L3 SME2 (Soil Moisture)</a></li>
+          <li><a href="https://search.asf.alaska.edu/" target="_blank" rel="noopener">ASF DAAC Vertex / Data Search</a></li>
+          <li><a href="https://urs.earthdata.nasa.gov/" target="_blank" rel="noopener">NASA Earthdata Login</a></li>
+        </ul>
 
-    <h3 data-i18n="c10OtherH">Space Agency Partner &amp; Other Data</h3>
-    <ul class="source-list">
-      <li><a href="https://forest-fire.emergency.copernicus.eu/" target="_blank" rel="noopener">Copernicus EFFIS (European Forest Fire Information System)</a></li>
-      <li><a href="https://registry.opendata.aws/copernicus-dem/" target="_blank" rel="noopener">Copernicus DEM GLO-30 (AWS Open Data)</a></li>
-      <li><a href="https://sentiwiki.copernicus.eu/web/sentinel-1" target="_blank" rel="noopener">Sentinel-1 (ESA/Copernicus)</a></li>
-      <li><a href="https://sentiwiki.copernicus.eu/web/sentinel-2" target="_blank" rel="noopener">Sentinel-2 (ESA/Copernicus)</a></li>
-      <li><a href="https://esa-worldcover.org/en" target="_blank" rel="noopener">ESA WorldCover 2021</a></li>
-      <li><a href="https://www.openstreetmap.org/" target="_blank" rel="noopener">OpenStreetMap</a></li>
-      <li><a href="https://www.whiteboxgeo.com/" target="_blank" rel="noopener">WhiteboxTools</a></li>
-      <li><a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a></li>
-      <li><a href="https://github.com/asfadmin/Discovery-asf_search" target="_blank" rel="noopener">asf_search (Python)</a></li>
-      <li><a href="https://geopandas.org/" target="_blank" rel="noopener">GeoPandas</a></li>
-      <li><a href="https://www.h5py.org/" target="_blank" rel="noopener">h5py</a></li>
-      <li><a href="https://rasterio.readthedocs.io/" target="_blank" rel="noopener">Rasterio</a></li>
-    </ul>
+        <h3 data-i18n="c10OtherH">Space Agency Partner &amp; Other Data</h3>
+        <ul class="source-list">
+          <li><a href="https://forest-fire.emergency.copernicus.eu/" target="_blank" rel="noopener">Copernicus EFFIS (European Forest Fire Information System)</a></li>
+          <li><a href="https://registry.opendata.aws/copernicus-dem/" target="_blank" rel="noopener">Copernicus DEM GLO-30 (AWS Open Data)</a></li>
+          <li><a href="https://sentiwiki.copernicus.eu/web/sentinel-1" target="_blank" rel="noopener">Sentinel-1 (ESA/Copernicus)</a></li>
+          <li><a href="https://sentiwiki.copernicus.eu/web/sentinel-2" target="_blank" rel="noopener">Sentinel-2 (ESA/Copernicus)</a></li>
+          <li><a href="https://esa-worldcover.org/en" target="_blank" rel="noopener">ESA WorldCover 2021</a></li>
+          <li><a href="https://www.openstreetmap.org/" target="_blank" rel="noopener">OpenStreetMap</a></li>
+          <li><a href="https://www.whiteboxgeo.com/" target="_blank" rel="noopener">WhiteboxTools</a></li>
+          <li><a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a></li>
+          <li><a href="https://github.com/asfadmin/Discovery-asf_search" target="_blank" rel="noopener">asf_search (Python)</a></li>
+          <li><a href="https://geopandas.org/" target="_blank" rel="noopener">GeoPandas</a></li>
+          <li><a href="https://www.h5py.org/" target="_blank" rel="noopener">h5py</a></li>
+          <li><a href="https://rasterio.readthedocs.io/" target="_blank" rel="noopener">Rasterio</a></li>
+        </ul>
 
-    <h3 data-i18n="c10TeamH">Equipo</h3>
-    <ul class="team-list">
-      <li>Gabriel Freire Simón — <a href="https://github.com/ByteGab" target="_blank" rel="noopener">github.com/ByteGab</a></li>
-      <li>Loreto Uzquiano Esteban — <a href="https://github.com/loreeue" target="_blank" rel="noopener">github.com/loreeue</a></li>
-      <li>Claudia Gil Durán — <a href="https://github.com/claauugil" target="_blank" rel="noopener">github.com/claauugil</a></li>
-      <li>Daniel Castillo Correa — <a href="https://github.com/DanielCasti11o" target="_blank" rel="noopener">github.com/DanielCasti11o</a></li>
-      <li>Ángel García Beltrán — <a href="https://github.com/angelurano" target="_blank" rel="noopener">github.com/angelurano</a></li>
-    </ul>
+        <h3 data-i18n="c10TeamH">Equipo</h3>
+        <ul class="team-list">
+          <li>Gabriel Freire Simón — <a href="https://github.com/ByteGab" target="_blank" rel="noopener">github.com/ByteGab</a></li>
+          <li>Loreto Uzquiano Esteban — <a href="https://github.com/loreeue" target="_blank" rel="noopener">github.com/loreeue</a></li>
+          <li>Claudia Gil Durán — <a href="https://github.com/claauugil" target="_blank" rel="noopener">github.com/claauugil</a></li>
+          <li>Daniel Castillo Correa — <a href="https://github.com/DanielCasti11o" target="_blank" rel="noopener">github.com/DanielCasti11o</a></li>
+          <li>Ángel García Beltrán — <a href="https://github.com/angelurano" target="_blank" rel="noopener">github.com/angelurano</a></li>
+        </ul>
+      </div>
+    </details>
   </section>
 
   <!-- CAPÍTULO 11: ALERTAS POR CORREO (necesita `python3 -m alerts serve`) -->
@@ -517,62 +522,41 @@
     </div>
 
     <div id="alerts-live" hidden>
-      <h3 data-i18n="a11NowH">Estado de hoy</h3>
-      <div class="mini-metrics alerts-now">
-        <div class="mini-metric"><span class="v" id="alerts-level">—</span><span class="k" data-i18n="a11NowLevelK">Nivel de alerta</span></div>
-        <div class="mini-metric"><span class="v" id="alerts-rain">—</span><span class="k" id="alerts-rain-k">Lluvia prevista</span></div>
-      </div>
-      <table class="data-table alerts-days">
-        <thead>
-          <tr><th scope="col" data-i18n="a11ThDay">Día</th><th scope="col" class="num" data-i18n="a11ThRain">Lluvia en 24 h</th><th scope="col" data-i18n="a11ThLevel">Nivel</th></tr>
-        </thead>
-        <tbody id="alerts-days"></tbody>
-      </table>
-      <p class="alerts-note" id="alerts-now-note"></p>
-
       <h3 data-i18n="a11FormH">Recibir el informe y los avisos</h3>
-      <div class="alerts-grid">
-        <form class="alerts-form" id="alerts-form" novalidate>
-          <div class="alerts-field">
-            <label for="alerts-name" data-i18n="a11Name">Nombre (opcional)</label>
-            <input id="alerts-name" name="name" type="text" maxlength="80" autocomplete="given-name" />
-          </div>
-          <div class="alerts-field">
-            <label for="alerts-email" data-i18n="a11Email">Correo electrónico</label>
-            <input id="alerts-email" name="email" type="email" maxlength="254" autocomplete="email" required />
-          </div>
-          <div class="alerts-field">
-            <label for="alerts-place" data-i18n="a11Place">Tu pueblo</label>
-            <select id="alerts-place" name="place"></select>
-            <p class="alerts-hint" id="alerts-place-hint"></p>
-          </div>
-          <div class="alerts-field">
-            <label for="alerts-min" data-i18n="a11Min">Avisarme de lluvia a partir de</label>
-            <select id="alerts-min" name="min_level">
-              <option value="1" data-i18n="a11Min1">Aviso amarillo (lluvia moderada)</option>
-              <option value="2" data-i18n="a11Min2">Alerta naranja (lluvia fuerte)</option>
-              <option value="3" data-i18n="a11Min3">Solo alerta roja (lluvia muy fuerte)</option>
-            </select>
-          </div>
-          <label class="alerts-check">
-            <input id="alerts-tech" name="technical" type="checkbox" />
-            <span data-i18n="a11Tech">Añadir el detalle técnico (hectáreas, volúmenes, microcuencas)</span>
-          </label>
-
-          <div class="alerts-actions">
-            <button class="alerts-btn" type="submit" data-i18n="a11Subscribe">Suscribirme</button>
-            <button class="alerts-btn alerts-btn-alt" id="alerts-test" type="button" hidden data-i18n="a11Test">Enviarme el informe ahora</button>
-          </div>
-          <p class="alerts-msg" id="alerts-msg" role="status" aria-live="polite"></p>
-          <p class="alerts-note" id="alerts-send-note"></p>
-        </form>
-
-        <div class="alerts-preview">
-          <div class="alerts-preview-k" data-i18n="a11PrevK">Este es el informe que recibirás</div>
-          <div class="alerts-subject" id="alerts-subject"></div>
-          <iframe id="alerts-frame" title="Vista previa del informe por correo" sandbox=""></iframe>
+      <form class="alerts-form" id="alerts-form" novalidate>
+        <div class="alerts-field">
+          <label for="alerts-name" data-i18n="a11Name">Nombre (opcional)</label>
+          <input id="alerts-name" name="name" type="text" maxlength="80" autocomplete="given-name" />
         </div>
-      </div>
+        <div class="alerts-field">
+          <label for="alerts-email" data-i18n="a11Email">Correo electrónico</label>
+          <input id="alerts-email" name="email" type="email" maxlength="254" autocomplete="email" required />
+        </div>
+        <div class="alerts-field">
+          <label for="alerts-place" data-i18n="a11Place">Tu pueblo</label>
+          <select id="alerts-place" name="place"></select>
+          <p class="alerts-hint" id="alerts-place-hint"></p>
+        </div>
+        <div class="alerts-field">
+          <label for="alerts-min" data-i18n="a11Min">Avisarme de lluvia a partir de</label>
+          <select id="alerts-min" name="min_level">
+            <option value="1" data-i18n="a11Min1">Aviso amarillo (lluvia moderada)</option>
+            <option value="2" data-i18n="a11Min2">Alerta naranja (lluvia fuerte)</option>
+            <option value="3" data-i18n="a11Min3">Solo alerta roja (lluvia muy fuerte)</option>
+          </select>
+        </div>
+        <label class="alerts-check">
+          <input id="alerts-tech" name="technical" type="checkbox" />
+          <span data-i18n="a11Tech">Añadir el detalle técnico (hectáreas, volúmenes, microcuencas)</span>
+        </label>
+
+        <div class="alerts-actions">
+          <button class="alerts-btn" type="submit" data-i18n="a11Subscribe">Suscribirme</button>
+          <button class="alerts-btn alerts-btn-alt" id="alerts-test" type="button" hidden data-i18n="a11Test">Enviarme el informe ahora</button>
+        </div>
+        <p class="alerts-msg" id="alerts-msg" role="status" aria-live="polite"></p>
+        <p class="alerts-note" id="alerts-send-note"></p>
+      </form>
     </div>
   </section>
 

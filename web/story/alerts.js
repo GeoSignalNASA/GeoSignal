@@ -1,21 +1,18 @@
 // Sección 11 · Alertas por correo.
-// Habla con la API de `python3 -m alerts serve`: estado de la previsión, vista previa
-// del informe del estudio que recibe cada persona y suscripción.
+// Habla con la API de `python3 -m alerts serve` para gestionar suscripciones
+// y envío inmediato del informe desde el equipo local.
 // En un servidor estático sin esa API la sección muestra un aviso y nada más.
 
 import { I18N } from "./i18n.js";
 
 const API = "api/alerts/";
-const LEVEL_CLASS = ["lvl-0", "lvl-1", "lvl-2", "lvl-3"];
 
 const $ = (id) => document.getElementById(id);
 const lang = () => (document.documentElement.lang === "en" ? "en" : "es");
 const t = () => I18N[lang()].alerts;
 
-let status = null;      // respuesta de /status, o null si no hay previsión
+let status = null;      // respuesta de /status (can_send_report)
 let places = [];        // respuesta de /places
-let previewTimer = null;
-let previewSeq = 0;
 let lastMessage = null; // () => texto, para poder traducirlo al cambiar de idioma
 
 class ApiError extends Error {
@@ -47,51 +44,9 @@ function fmtNum(value) {
   return new Intl.NumberFormat(t().locale, { maximumFractionDigits: value >= 10 ? 0 : 1 }).format(value);
 }
 
-function fmtDay(iso) {
-  return new Date(`${iso}T12:00:00`).toLocaleDateString(t().locale, { weekday: "long", day: "numeric", month: "long" });
-}
-
 function fmtDist(meters) {
   if (meters < 1000) return `${fmtNum(Math.max(50, Math.round(meters / 50) * 50))} m`;
   return `${new Intl.NumberFormat(t().locale, { maximumFractionDigits: 1 }).format(meters / 1000)} km`;
-}
-
-function setLevel(el, level) {
-  el.textContent = t().levels[level];
-  el.classList.remove(...LEVEL_CLASS);
-  el.classList.add(LEVEL_CLASS[level]);
-}
-
-function renderStatus() {
-  const d = t();
-  const tbody = $("alerts-days");
-  tbody.replaceChildren();
-  if (!status) {
-    $("alerts-level").textContent = "—";
-    $("alerts-level").classList.remove(...LEVEL_CLASS);
-    $("alerts-rain").textContent = "—";
-    $("alerts-rain-k").textContent = d.rainK("—");
-    $("alerts-now-note").textContent = d.nowUnavailable;
-    return;
-  }
-  const worst = status.days.find((day) => day.date === status.worst_date) || status.days[0];
-  setLevel($("alerts-level"), status.level);
-  $("alerts-rain").textContent = `${fmtNum(worst.rain_mm)} ${d.unit}`;
-  $("alerts-rain-k").textContent = d.rainK(fmtDay(worst.date));
-  for (const day of status.days) {
-    const tr = document.createElement("tr");
-    const cells = [fmtDay(day.date), `${fmtNum(day.rain_mm)} ${d.unit}`, ""];
-    cells.forEach((text, i) => {
-      const td = document.createElement("td");
-      td.textContent = text;
-      if (i === 1) td.className = "num";
-      if (i === 2) setLevel(td, day.level);
-      tr.append(td);
-    });
-    tbody.append(tr);
-  }
-  const th = status.thresholds;
-  $("alerts-now-note").textContent = d.nowNote(th.rain_24h_mm.join(" / "), th.rain_1h_mm.join(" / "));
 }
 
 function renderPlaces() {
@@ -138,25 +93,6 @@ function formData() {
   };
 }
 
-async function updatePreview() {
-  const seq = ++previewSeq;
-  const subject = $("alerts-subject");
-  if (!subject.textContent) subject.textContent = t().loading;
-  try {
-    const data = await api("preview", formData());
-    if (seq !== previewSeq) return; // llegó tarde: ya hay otra petición más reciente
-    subject.textContent = data.subject;
-    $("alerts-frame").srcdoc = data.html;
-  } catch {
-    if (seq === previewSeq) subject.textContent = t().previewFailed;
-  }
-}
-
-function schedulePreview() {
-  clearTimeout(previewTimer);
-  previewTimer = setTimeout(updatePreview, 250);
-}
-
 function readEmail() {
   const input = $("alerts-email");
   const email = input.value.trim();
@@ -188,7 +124,6 @@ async function withBusy(button, task) {
 }
 
 function renderAll() {
-  renderStatus();
   renderPlaces();
   renderSendNote();
   if (lastMessage) showMessage(lastMessage.makeText, lastMessage.isError);
@@ -209,7 +144,6 @@ async function init() {
   }
   $("alerts-live").hidden = false;
   renderAll();
-  updatePreview();
 
   const form = $("alerts-form");
   form.addEventListener("submit", (e) => {
@@ -225,12 +159,10 @@ async function init() {
       showMessage(() => t().sent(email));
     });
   });
-  $("alerts-place").addEventListener("change", () => { renderHint(); schedulePreview(); });
-  $("alerts-tech").addEventListener("change", schedulePreview);
-  $("alerts-name").addEventListener("input", schedulePreview);
+  $("alerts-place").addEventListener("change", renderHint);
 
   // story.js cambia <html lang> al pulsar EN/ES: volver a pintar lo dinámico.
-  new MutationObserver(() => { renderAll(); updatePreview(); })
+  new MutationObserver(renderAll)
     .observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
 }
 

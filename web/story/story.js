@@ -42,6 +42,10 @@ let lastCompareWidth = 0;
 let beforeMap = null;
 let afterMap = null;
 let q8Pixels = null; // { data, width, height, coordinates }
+let q8DecodePromise = null;
+const preloadedOverlayImages = new Map();
+const overlayLoadPromises = new Map();
+let preloadStarted = false;
 let activeLang = "es";
 let activeStep = "summary";
 let activeSeriesDate = "2026-10-01";
@@ -169,6 +173,14 @@ function resizeAllMaps() {
 
 function flyToCamera(center, zoom) {
   if (!map) return;
+  const cur = map.getCenter();
+  if (
+    Math.abs(cur.lng - center[0]) < 1e-4 &&
+    Math.abs(cur.lat - center[1]) < 1e-4 &&
+    Math.abs(map.getZoom() - zoom) < 0.01
+  ) {
+    return;
+  }
   const opts = { center, zoom, essential: true };
   if (REDUCED_MOTION) map.jumpTo(opts);
   else map.flyTo({ ...opts, speed: 1.15 });
@@ -179,33 +191,117 @@ function setLayerVisible(id, visible) {
   map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
 }
 
+function imageSpecFor(key) {
+  const info = OVERLAYS?.[key];
+  if (!info) return null;
+  const cached = preloadedOverlayImages.get(key);
+  return cached
+    ? { image: cached, coordinates: info.coordinates }
+    : { url: info.url, coordinates: info.coordinates };
+}
+
+function preloadOverlay(key) {
+  const info = OVERLAYS?.[key];
+  if (!info || key === "dhv_q8.png") return Promise.resolve(null);
+  if (preloadedOverlayImages.has(key)) return Promise.resolve(preloadedOverlayImages.get(key));
+  if (overlayLoadPromises.has(key)) return overlayLoadPromises.get(key);
+  const p = new Promise((resolve) => {
+    const img = new Image();
+    img.decoding = "async";
+    img.onload = async () => {
+      try {
+        if (typeof img.decode === "function") await img.decode();
+      } catch {
+        // fallback al objeto img ya cargado
+      }
+      preloadedOverlayImages.set(key, img);
+      resolve(img);
+    };
+    img.onerror = () => resolve(null);
+    img.src = info.url;
+  });
+  overlayLoadPromises.set(key, p);
+  return p;
+}
+
+function runPostFirstFramePreload() {
+  if (preloadStarted || !OVERLAYS) return;
+  preloadStarted = true;
+  if (!compareInit) initCompareMaps();
+  ensureQ8Decoded();
+
+  const priority = [
+    "hv_pre.png",
+    "hv_post.png",
+    "ts/2026-10-01",
+    "optical_fire.jpg",
+    "dhv_mt.png",
+    "dhh.png",
+    "dhv_cont.png",
+    "optical_clouds.jpg",
+    "optical_post.jpg",
+    "dnbr_s2.png",
+    "dhv_oct25.png",
+    "dhv_oct01_cal.png",
+    "dhv_classes.png",
+    "ts/2026-09-19",
+    "ts/2026-10-13",
+    "ts/2026-10-25",
+  ];
+  const seen = new Set(priority);
+  const queue = [
+    ...priority.filter((k) => OVERLAYS[k]),
+    ...Object.keys(OVERLAYS).filter((k) => !seen.has(k) && k !== "dhv_q8.png"),
+  ];
+
+  let cursor = 0;
+  const concurrency = 4;
+  const worker = async () => {
+    while (cursor < queue.length) {
+      const key = queue[cursor++];
+      await preloadOverlay(key);
+    }
+  };
+  for (let i = 0; i < Math.min(concurrency, queue.length); i++) worker();
+}
+
 function updateRasterOverlay(key) {
   if (!map || !OVERLAYS || !OVERLAYS[key]) return;
   const src = map.getSource("radar-overlay");
-  if (!src) return;
-  src.updateImage({ url: OVERLAYS[key].url, coordinates: OVERLAYS[key].coordinates });
+  const spec = imageSpecFor(key);
+  if (!src || !spec) return;
+  src.updateImage(spec);
+  if (!spec.image) preloadOverlay(key);
   if (map.getLayer("radar-overlay-layer")) {
     map.setPaintProperty("radar-overlay-layer", "raster-opacity", setRasterOpacityForKey(key));
   }
   setLayerVisible("radar-overlay-layer", true);
 }
 
-async function decodeQ8Image() {
-  const info = OVERLAYS["dhv_q8.png"];
-  if (!info) return;
-  const img = new Image();
-  img.src = info.url;
-  await img.decode();
-  const c = document.createElement("canvas");
-  c.width = img.width;
-  c.height = img.height;
-  const ctx = c.getContext("2d");
-  ctx.drawImage(img, 0, 0);
-  const raw = ctx.getImageData(0, 0, c.width, c.height).data;
-  q8Pixels = { raw, width: c.width, height: c.height, info };
+function ensureQ8Decoded() {
+  if (q8Pixels) return Promise.resolve(q8Pixels);
+  if (q8DecodePromise) return q8DecodePromise;
+  const info = OVERLAYS?.["dhv_q8.png"];
+  if (!info) return Promise.resolve(null);
+  q8DecodePromise = (async () => {
+    const img = new Image();
+    img.decoding = "async";
+    img.src = info.url;
+    await img.decode();
+    const c = document.createElement("canvas");
+    c.width = img.width;
+    c.height = img.height;
+    const ctx = c.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    const raw = ctx.getImageData(0, 0, c.width, c.height).data;
+    q8Pixels = { raw, width: c.width, height: c.height, info };
+    return q8Pixels;
+  })().catch(() => null);
+  return q8DecodePromise;
 }
 
 async function renderLiveThresholdOverlay(thresholdDb) {
+  if (!q8Pixels) await ensureQ8Decoded();
   if (!q8Pixels || !map) return;
   const src = map.getSource("radar-overlay");
   if (!src) return;
@@ -425,8 +521,10 @@ function updateCompareLayers(optKey, radKey) {
   if (!beforeMap || !afterMap) return;
   const oSrc = beforeMap.getSource("opt-src");
   const rSrc = afterMap.getSource("rad-src");
-  if (oSrc && OVERLAYS[optKey]) oSrc.updateImage({ url: OVERLAYS[optKey].url, coordinates: OVERLAYS[optKey].coordinates });
-  if (rSrc && OVERLAYS[radKey]) rSrc.updateImage({ url: OVERLAYS[radKey].url, coordinates: OVERLAYS[radKey].coordinates });
+  const oSpec = imageSpecFor(optKey);
+  const rSpec = imageSpecFor(radKey);
+  if (oSrc && oSpec) oSrc.updateImage(oSpec);
+  if (rSrc && rSpec) rSrc.updateImage(rSpec);
   document.getElementById("cmp-left-lbl").textContent = getOverlayLabel(optKey);
   document.getElementById("cmp-right-lbl").textContent = getOverlayLabel(radKey);
 }
@@ -539,7 +637,9 @@ function selectBasinById(basinId) {
   }
 
   const assetsHtml = assets.length
-    ? `<ul class="asset-list">${assets.map((a) => `<li class="asset-chip">${a.name} (${a.type})</li>`).join("")}</ul>`
+    ? `<ul class="asset-list">${assets
+        .map((a) => `<li class="asset-chip">${a.name} (${I18N[activeLang]?.assetTypes?.[a.type] || a.type})</li>`)
+        .join("")}</ul>`
     : `<p style="font-size:0.8rem;color:var(--text-muted);margin:0.35rem 0 0">${d.basinAssetsNone}</p>`;
 
   document.getElementById("basin-inspector").innerHTML = `
@@ -653,12 +753,8 @@ function activateStep(stepId) {
 
   switch (activeStep) {
     case "summary":
-      flyToCamera([-7.85, 41.923], 11.3);
-      setLayerVisible("fire-fill", true);
-      setAssetMarkersVisible(true);
-      break;
     case "1":
-      flyToCamera([-7.84, 41.925], 11.4);
+      flyToCamera([-7.85, 41.923], 11.3);
       setLayerVisible("fire-fill", true);
       setAssetMarkersVisible(true);
       break;
@@ -776,7 +872,7 @@ function applyDhbMode(mode, updateMap = true) {
     document.getElementById("db-ha-smooth").textContent = `${fmtEs(wet.burned_total_ha, 1)} ha`;
     document.getElementById("db-ha-raw").textContent = `${fmtEs(STATS.severity_raw_20m.burned_total_ha, 1)} ha ${d.oct01WetSuffix}`;
     document.getElementById("db-fp-rate").textContent = d.oct01WetFp;
-    document.getElementById("db-energy-loss").textContent = "29% (−1,5 dB)";
+    document.getElementById("db-energy-loss").textContent = `29% (${fmtEs(-1.5, 1)} dB)`;
   } else if (mode === "oct01_cal") {
     const cal = STATS.severity_oct01_calibrated || STATS.severity_smooth;
     if (updateMap) updateRasterOverlay("dhv_oct01_cal.png");
@@ -784,7 +880,7 @@ function applyDhbMode(mode, updateMap = true) {
     document.getElementById("db-ha-smooth").textContent = `${fmtEs(cal.burned_total_ha, 1)} ha`;
     document.getElementById("db-ha-raw").textContent = `${fmtEs(cal.burned_total_ha, 1)} ha ${d.octCalSuffix}`;
     document.getElementById("db-fp-rate").textContent = d.octCalFp;
-    document.getElementById("db-energy-loss").textContent = "29% (−1,5 dB)";
+    document.getElementById("db-energy-loss").textContent = `29% (${fmtEs(-1.5, 1)} dB)`;
   } else if (mode === "oct25") {
     const oct25 = STATS.severity_oct25 || STATS.severity_smooth;
     if (updateMap) updateRasterOverlay("dhv_oct25.png");
@@ -792,7 +888,7 @@ function applyDhbMode(mode, updateMap = true) {
     document.getElementById("db-ha-smooth").textContent = `${fmtEs(oct25.burned_total_ha, 1)} ha`;
     document.getElementById("db-ha-raw").textContent = `${fmtEs(oct25.burned_total_ha, 1)} ha ${d.oct25Suffix}`;
     document.getElementById("db-fp-rate").textContent = d.oct25Fp;
-    document.getElementById("db-energy-loss").textContent = "29% (−1,5 dB)";
+    document.getElementById("db-energy-loss").textContent = `29% (${fmtEs(-1.5, 1)} dB)`;
   } else if (mode === "continuous") {
     if (updateMap) updateRasterOverlay("dhv_cont.png");
     renderSeverityTable(mt);
@@ -1021,13 +1117,11 @@ async function init() {
   selectDate("2026-10-01");
   updateThresholdReadout(-1.5);
 
-  await decodeQ8Image();
-
   map = new maplibregl.Map({
     container: "story-map",
     style: darkBaseStyle(),
-    center: [-7.855, 41.922],
-    zoom: 11.4,
+    center: [-7.85, 41.923],
+    zoom: 11.3,
     minZoom: MIN_ZOOM,
     maxZoom: MAX_ZOOM,
     maxBounds: REGION_BOUNDS,
@@ -1136,9 +1230,17 @@ async function init() {
       return r.top <= mid && r.bottom >= mid;
     });
     activateStep(visible ? visible.dataset.step : "summary");
-    setTimeout(() => {
-      if (!compareInit) initCompareMaps();
-    }, 350);
+
+    // Precarga en "primer frame + 1": tras completar tiles iniciales y pintar un frame,
+    // inicializa el comparador y decodifica los rasters prioritarios sin crear 24 addSource.
+    let frame1Triggered = false;
+    const triggerPostFirstFrame = () => {
+      if (frame1Triggered) return;
+      frame1Triggered = true;
+      requestAnimationFrame(() => runPostFirstFramePreload());
+    };
+    map.once("idle", triggerPostFirstFrame);
+    setTimeout(triggerPostFirstFrame, 1500);
   });
 
   // Controles interactivos
