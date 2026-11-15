@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GeoSignal - Informe NISAR sobre Calvos de Randín</title>
+  <title>GeoSignal</title>
   <link rel="stylesheet" href="vendor/maplibre-gl.css" />
   <link rel="stylesheet" href="vendor/maplibre-gl-compare.css" />
   <link rel="stylesheet" href="story/fonts.css" />
@@ -515,47 +515,43 @@
       previsión real anuncie lluvia fuerte sobre el monte quemado.
     </p>
 
-    <div class="callout-warn" id="alerts-offline" hidden data-i18n-html="a11Offline">
-      <strong>Sección inactiva en este servidor:</strong>
-      los avisos necesitan el servidor de alertas. Arranca la web con <code>python3 -m alerts serve</code> desde la raíz
-      del repositorio y vuelve a cargar esta página.
-    </div>
-
-    <div id="alerts-live" hidden>
+    <div id="alerts-live">
       <h3 data-i18n="a11FormH">Recibir el informe y los avisos</h3>
       <form class="alerts-form" id="alerts-form" novalidate>
-        <div class="alerts-field">
-          <label for="alerts-name" data-i18n="a11Name">Nombre (opcional)</label>
-          <input id="alerts-name" name="name" type="text" maxlength="80" autocomplete="given-name" />
-        </div>
-        <div class="alerts-field">
-          <label for="alerts-email" data-i18n="a11Email">Correo electrónico</label>
-          <input id="alerts-email" name="email" type="email" maxlength="254" autocomplete="email" required />
-        </div>
-        <div class="alerts-field">
-          <label for="alerts-place" data-i18n="a11Place">Tu pueblo</label>
-          <select id="alerts-place" name="place"></select>
-          <p class="alerts-hint" id="alerts-place-hint"></p>
-        </div>
-        <div class="alerts-field">
-          <label for="alerts-min" data-i18n="a11Min">Avisarme de lluvia a partir de</label>
-          <select id="alerts-min" name="min_level">
-            <option value="1" data-i18n="a11Min1">Aviso amarillo (lluvia moderada)</option>
-            <option value="2" data-i18n="a11Min2">Alerta naranja (lluvia fuerte)</option>
-            <option value="3" data-i18n="a11Min3">Solo alerta roja (lluvia muy fuerte)</option>
-          </select>
-        </div>
-        <label class="alerts-check">
-          <input id="alerts-tech" name="technical" type="checkbox" />
-          <span data-i18n="a11Tech">Añadir el detalle técnico (hectáreas, volúmenes, microcuencas)</span>
-        </label>
+        <fieldset class="alerts-fieldset" disabled>
+          <div class="alerts-field">
+            <label for="alerts-name" data-i18n="a11Name">Nombre (opcional)</label>
+            <input id="alerts-name" name="name" type="text" maxlength="80" autocomplete="given-name" placeholder="Ej. María Gómez" data-i18n-placeholder="a11NamePh" />
+          </div>
+          <div class="alerts-field">
+            <label for="alerts-email" data-i18n="a11Email">Correo electrónico</label>
+            <input id="alerts-email" name="email" type="email" maxlength="254" autocomplete="email" placeholder="nombre@ejemplo.es" data-i18n-placeholder="a11EmailPh" required />
+          </div>
+          <div class="alerts-field">
+            <label for="alerts-place" data-i18n="a11Place">Tu pueblo</label>
+            <select id="alerts-place" name="place">
+              <option value="" data-i18n="a11PlacePh">As Meaus · exposición alta</option>
+            </select>
+            <p class="alerts-hint" id="alerts-place-hint" data-i18n="a11PlaceHintPh">Exposición alta: está en la ladera que recoge directamente el agua del monte quemado (regato a unos 300 m).</p>
+          </div>
+          <div class="alerts-field">
+            <label for="alerts-min" data-i18n="a11Min">Avisarme de lluvia a partir de</label>
+            <select id="alerts-min" name="min_level">
+              <option value="1" data-i18n="a11Min1">Aviso amarillo (lluvia moderada)</option>
+              <option value="2" data-i18n="a11Min2">Alerta naranja (lluvia fuerte)</option>
+              <option value="3" data-i18n="a11Min3">Solo alerta roja (lluvia muy fuerte)</option>
+            </select>
+          </div>
+          <label class="alerts-check">
+            <input id="alerts-tech" name="technical" type="checkbox" />
+            <span data-i18n="a11Tech">Añadir el detalle técnico (hectáreas, volúmenes, microcuencas)</span>
+          </label>
 
-        <div class="alerts-actions">
-          <button class="alerts-btn" type="submit" data-i18n="a11Subscribe">Suscribirme</button>
-          <button class="alerts-btn alerts-btn-alt" id="alerts-test" type="button" hidden data-i18n="a11Test">Enviarme el informe ahora</button>
-        </div>
-        <p class="alerts-msg" id="alerts-msg" role="status" aria-live="polite"></p>
-        <p class="alerts-note" id="alerts-send-note"></p>
+          <div class="alerts-actions">
+            <button class="alerts-btn" type="submit" data-i18n="a11Subscribe">Suscribirme</button>
+          </div>
+          <p class="alerts-note" id="alerts-send-note" data-i18n="a11DemoNote">Vista de muestra (formulario deshabilitado en la versión web).</p>
+        </fieldset>
       </form>
     </div>
   </section>
@@ -563,6 +559,5 @@
   <script src="vendor/maplibre-gl.js"></script>
   <script src="vendor/maplibre-gl-compare.js"></script>
   <script type="module" src="story/story.js"></script>
-  <script type="module" src="story/alerts.js"></script>
 </body>
 </html>

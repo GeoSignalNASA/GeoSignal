@@ -782,6 +782,13 @@ code {
 .alerts-msg:empty { display: none; }
 
 .alerts-form { max-width: 520px; font-family: var(--sans); }
+.alerts-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+.alerts-fieldset:disabled { opacity: 0.78; }
 .alerts-field { margin-bottom: 1.35rem; }
 .alerts-field label {
   display: block;
@@ -804,6 +811,14 @@ code {
 .alerts-field select { cursor: pointer; }
 .alerts-field input:hover,
 .alerts-field select:hover { border-bottom-color: var(--tinta); }
+.alerts-field input:disabled,
+.alerts-field select:disabled {
+  color: var(--tinta-2);
+  border-bottom-color: var(--linea);
+  cursor: not-allowed;
+}
+.alerts-field input:disabled:hover,
+.alerts-field select:disabled:hover { border-bottom-color: var(--linea); }
 
 .alerts-check {
   display: flex;
@@ -814,6 +829,7 @@ code {
   color: var(--tinta);
   cursor: pointer;
 }
+.alerts-check:has(input:disabled) { cursor: not-allowed; }
 .alerts-check input { width: 18px; height: 18px; margin: 0.15rem 0 0; flex-shrink: 0; accent-color: var(--fuego); }
 
 .alerts-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem; }
@@ -830,7 +846,8 @@ code {
 .alerts-btn:hover { background: var(--fuego-alta); border-color: var(--fuego-alta); }
 .alerts-btn-alt { background: transparent; color: var(--fuego); }
 .alerts-btn-alt:hover { background: var(--papel-2); border-color: var(--fuego); }
-.alerts-btn:disabled { opacity: 0.55; cursor: progress; }
+.alerts-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+.alerts-btn:disabled:hover { background: var(--fuego); border-color: var(--fuego); }
 
 .alerts-msg {
   margin: 1rem 0 0;

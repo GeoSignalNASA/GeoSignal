@@ -1041,6 +1041,13 @@ function applyLanguage(lang) {
     el.innerHTML = val !== undefined ? val : el.dataset.i18nHtmlEs;
   });
 
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    const key = el.dataset.i18nPlaceholder;
+    if (el.dataset.i18nPlaceholderEs === undefined) el.dataset.i18nPlaceholderEs = el.getAttribute("placeholder") || "";
+    const val = dict[key];
+    el.setAttribute("placeholder", val !== undefined ? val : el.dataset.i18nPlaceholderEs);
+  });
+
   document.querySelectorAll(".toc-pill").forEach((el, idx) => {
     if (dict.tocLabels[idx]) el.textContent = dict.tocLabels[idx];
   });

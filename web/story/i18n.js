@@ -2,7 +2,7 @@
 
 export const I18N = {
   es: {
-    docTitle: "GeoSignal - Análisis SAR en Banda L · Calvos de Randín",
+    docTitle: "GeoSignal",
     tocAria: "Capítulos del análisis",
     mapAria: "Mapa geoespacial interactivo de Calvos de Randín",
     langBtn: "EN",
@@ -103,8 +103,12 @@ export const I18N = {
       "<strong>Sección inactiva en este servidor:</strong> los avisos necesitan el servidor de alertas. Arranca la web con <code>python3 -m alerts serve</code> desde la raíz del repositorio y vuelve a cargar esta página.",
     a11FormH: "Recibir el informe y los avisos",
     a11Name: "Nombre (opcional)",
+    a11NamePh: "Ej. María Gómez",
     a11Email: "Correo electrónico",
+    a11EmailPh: "nombre@ejemplo.es",
     a11Place: "Tu pueblo",
+    a11PlacePh: "As Meaus · exposición alta",
+    a11PlaceHintPh: "Exposición alta: está en la ladera que recoge directamente el agua del monte quemado (regato a unos 300 m).",
     a11Min: "Avisarme de lluvia a partir de",
     a11Min1: "Aviso amarillo (lluvia moderada)",
     a11Min2: "Alerta naranja (lluvia fuerte)",
@@ -112,6 +116,7 @@ export const I18N = {
     a11Tech: "Añadir el detalle técnico (hectáreas, volúmenes, microcuencas)",
     a11Subscribe: "Suscribirme",
     a11Test: "Enviarme el informe ahora",
+    a11DemoNote: "Vista de muestra (formulario deshabilitado en la versión web).",
     alerts: {
       locale: "es-ES",
       noPlace: "Sin pueblo concreto (aviso general)",
@@ -186,7 +191,7 @@ export const I18N = {
   },
 
   en: {
-    docTitle: "GeoSignal - L-Band SAR Severity & Runoff Analysis · Calvos de Randín",
+    docTitle: "GeoSignal",
     tocAria: "Analysis chapters",
     mapAria: "Interactive geospatial map of Calvos de Randín",
     skipLink: "Skip to content",
@@ -454,8 +459,12 @@ export const I18N = {
       "<strong>Section inactive on this server:</strong> warnings need the alert server. Start the site with <code>python3 -m alerts serve</code> from the repository root and reload this page.",
     a11FormH: "Get the report and the warnings",
     a11Name: "Name (optional)",
+    a11NamePh: "e.g. Jane Doe",
     a11Email: "Email address",
+    a11EmailPh: "name@example.com",
     a11Place: "Your village",
+    a11PlacePh: "As Meaus · high exposure",
+    a11PlaceHintPh: "High exposure: it sits on the slope that collects water straight from the burned hillside (stream about 300 m away).",
     a11Min: "Warn me about rain from",
     a11Min1: "Yellow advisory (moderate rain)",
     a11Min2: "Orange alert (heavy rain)",
@@ -463,6 +472,7 @@ export const I18N = {
     a11Tech: "Add the technical detail (hectares, volumes, micro-watersheds)",
     a11Subscribe: "Subscribe",
     a11Test: "Send me the report now",
+    a11DemoNote: "Sample preview (form disabled in the web version).",
     alerts: {
       locale: "en-US",
       noPlace: "No specific village (general warning)",
