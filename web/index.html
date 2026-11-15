@@ -33,6 +33,7 @@
       <a class="toc-pill" data-step="9" href="#cap-9">8. Replicabilidad</a>
       <a class="toc-pill" data-step="5" href="#cap-5">9. Umbrales ΔHV</a>
       <a class="toc-pill" data-step="10" href="#cap-10">10. Auditoría QA</a>
+      <a class="toc-pill" data-step="11" href="#cap-11">11. Alertas</a>
       </div>
     </nav>
     <div class="topbar-actions">
@@ -391,8 +392,85 @@
     </div>
   </section>
 
+  <!-- CAPÍTULO 11: ALERTAS POR CORREO (necesita `python3 -m alerts serve`) -->
+  <section class="report-footer alerts-section" id="cap-11">
+    <div class="eyebrow" data-i18n="a11Num">11 · Alertas por correo</div>
+    <h2 data-i18n="a11Title">Avisos de lluvia sobre el monte quemado</h2>
+    <p data-i18n="a11P1">
+      Al suscribirte recibes por correo el informe de este estudio, escrito sin tecnicismos: cuánto se quemó, por dónde puede
+      bajar el agua, qué dan los simuladores de arriba y qué significa para tu pueblo. Después solo te escribiremos cuando la
+      previsión real anuncie lluvia fuerte sobre el monte quemado.
+    </p>
+
+    <div class="callout-warn" id="alerts-offline" hidden data-i18n-html="a11Offline">
+      <strong>Sección inactiva en este servidor:</strong>
+      los avisos necesitan el servidor de alertas. Arranca la web con <code>python3 -m alerts serve</code> desde la raíz
+      del repositorio y vuelve a cargar esta página.
+    </div>
+
+    <div id="alerts-live" hidden>
+      <h3 data-i18n="a11NowH">Estado de hoy</h3>
+      <div class="mini-metrics alerts-now">
+        <div class="mini-metric"><span class="v" id="alerts-level">—</span><span class="k" data-i18n="a11NowLevelK">Nivel de alerta</span></div>
+        <div class="mini-metric"><span class="v" id="alerts-rain">—</span><span class="k" id="alerts-rain-k">Lluvia prevista</span></div>
+      </div>
+      <table class="data-table alerts-days">
+        <thead>
+          <tr><th scope="col" data-i18n="a11ThDay">Día</th><th scope="col" class="num" data-i18n="a11ThRain">Lluvia en 24 h</th><th scope="col" data-i18n="a11ThLevel">Nivel</th></tr>
+        </thead>
+        <tbody id="alerts-days"></tbody>
+      </table>
+      <p class="alerts-note" id="alerts-now-note"></p>
+
+      <h3 data-i18n="a11FormH">Recibir el informe y los avisos</h3>
+      <div class="alerts-grid">
+        <form class="alerts-form" id="alerts-form" novalidate>
+          <div class="alerts-field">
+            <label for="alerts-name" data-i18n="a11Name">Nombre (opcional)</label>
+            <input id="alerts-name" name="name" type="text" maxlength="80" autocomplete="given-name" />
+          </div>
+          <div class="alerts-field">
+            <label for="alerts-email" data-i18n="a11Email">Correo electrónico</label>
+            <input id="alerts-email" name="email" type="email" maxlength="254" autocomplete="email" required />
+          </div>
+          <div class="alerts-field">
+            <label for="alerts-place" data-i18n="a11Place">Tu pueblo</label>
+            <select id="alerts-place" name="place"></select>
+            <p class="alerts-hint" id="alerts-place-hint"></p>
+          </div>
+          <div class="alerts-field">
+            <label for="alerts-min" data-i18n="a11Min">Avisarme de lluvia a partir de</label>
+            <select id="alerts-min" name="min_level">
+              <option value="1" data-i18n="a11Min1">Aviso amarillo (lluvia moderada)</option>
+              <option value="2" data-i18n="a11Min2">Alerta naranja (lluvia fuerte)</option>
+              <option value="3" data-i18n="a11Min3">Solo alerta roja (lluvia muy fuerte)</option>
+            </select>
+          </div>
+          <label class="alerts-check">
+            <input id="alerts-tech" name="technical" type="checkbox" />
+            <span data-i18n="a11Tech">Añadir el detalle técnico (hectáreas, volúmenes, microcuencas)</span>
+          </label>
+
+          <div class="alerts-actions">
+            <button class="alerts-btn" type="submit" data-i18n="a11Subscribe">Suscribirme</button>
+            <button class="alerts-btn alerts-btn-alt" id="alerts-test" type="button" hidden data-i18n="a11Test">Enviarme el informe ahora</button>
+          </div>
+          <p class="alerts-msg" id="alerts-msg" role="status" aria-live="polite"></p>
+          <p class="alerts-note" id="alerts-send-note"></p>
+        </form>
+
+        <div class="alerts-preview">
+          <div class="alerts-preview-k" data-i18n="a11PrevK">Este es el informe que recibirás</div>
+          <div class="alerts-subject" id="alerts-subject"></div>
+          <iframe id="alerts-frame" title="Vista previa del informe por correo" sandbox=""></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <script src="vendor/maplibre-gl.js"></script>
   <script src="vendor/maplibre-gl-compare.js"></script>
   <script type="module" src="story/story.js"></script>
+  <script type="module" src="story/alerts.js"></script>
 </body>
 </html>

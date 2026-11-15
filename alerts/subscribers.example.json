@@ -1,0 +1,18 @@
+[
+  {
+    "email": "vecina@example.org",
+    "name": "Vecina de As Meaus",
+    "lang": "es",
+    "places": ["As Meaus"],
+    "profile": "resident",
+    "min_level": 1
+  },
+  {
+    "email": "tecnico@example.org",
+    "name": "Protección Civil",
+    "lang": "es",
+    "places": ["Embalse de Salas", "Randín"],
+    "profile": "technical",
+    "min_level": 2
+  }
+]

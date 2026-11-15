@@ -10,3 +10,8 @@ __pycache__/
 *.pyc
 data/.venv/
 .netrc
+
+# alertas por correo: datos personales y salidas locales
+alerts/subscribers.json
+alerts/state.json
+alerts/outbox/

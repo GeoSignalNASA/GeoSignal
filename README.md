@@ -19,6 +19,15 @@ web/
   index.html / app.js / style.css   slider óptico-vs-radar + mapa de riesgo
   demo.html             maqueta sin datos reales, para probar la interacción
   data/                 geojson/png generados por el pipeline (no se commitea)
+alerts/
+  __main__.py           CLI: check / run / serve / subscribe / unsubscribe / list / places
+  server.py             web + API para el capítulo 11 del StoryMap (story/alerts.js)
+  forecast.py           lluvia prevista (Open-Meteo) o escenario simulado
+  engine.py             nivel de alerta, volumen de escorrentía, no repetir avisos
+  geodata.py            cuencas y exposición de cada núcleo desde web/assets/data
+  report.py             informe del estudio en lenguaje llano (es/en)
+  compose.py            aviso de lluvia + render de texto y HTML (vecino o técnico)
+  mailer.py             envío SMTP o volcado a alerts/outbox/
 ```
 
 ## Datos confirmados (comprobado en vivo contra ASF el 2026-11-14)
@@ -138,6 +147,9 @@ El punto de entrada principal (`web/index.html`) es un **informe narrativo estil
 ```bash
 devenv up   # o: cd web && python -m http.server 8000
 # -> http://localhost:8000/
+
+# con el capítulo de alertas activo (desde la raíz del repo):
+python3 -m alerts serve   # -> http://127.0.0.1:8765/
 ```
 
 El explorador técnico original sigue disponible en `web/real_demo.html`. Para regenerar los insumos ligeros (`web/assets/data/`) desde las escenas `.h5` locales:
@@ -147,6 +159,108 @@ python data/extract_aoi_stack.py
 python data/build_story_data.py
 python data/validate_story_data.py
 ```
+
+## Alertas por correo (`alerts/`)
+
+Manda dos tipos de correo, los dos escritos para vecinos y sin
+tecnicismos:
+
+- **Informe del estudio.** Lo recibe cada persona al suscribirse: cuánto
+  se quemó según cada fuente, por qué se usó radar, qué tipo de terreno
+  ardió, por dónde puede bajar el agua, qué da el simulador de lluvia para
+  20 / 40 / 80 l/m², dónde convendrían barreras y qué significa para su
+  pueblo. Solo se reenvía si se regeneran los datos del estudio.
+- **Aviso de lluvia.** Solo cuando la previsión real alcanza el nivel que
+  eligió la persona. Los simulacros no se envían nunca por correo.
+
+Solo
+usa la biblioteca estándar de Python (no necesita `data/.venv`) y lee los
+mismos insumos que la web (`web/assets/data/`). Se ejecuta desde la raíz
+del repo, como el pipeline.
+
+Qué hace en cada ejecución:
+
+1. Pide a Open-Meteo (gratis, sin clave) la lluvia horaria de los próximos
+   3 días en el centro del perímetro del incendio.
+2. Asigna un nivel por día: amarillo / naranja / rojo si la lluvia en 24 h
+   llega a 20 / 40 / 80 mm o la intensidad horaria a 10 / 20 / 40 mm/h.
+3. Escribe un correo distinto para cada suscriptor (texto + HTML, en
+   español o inglés) y lo envía por SMTP. El correo está escrito para
+   vecinos: litros por metro cuadrado, exposición alta/media/baja de su
+   núcleo y qué hacer. El perfil `technical` añade al final las cifras
+   (hectáreas, m³, microcuencas, candidatas a barrera).
+
+```bash
+python3 -m alerts places                      # núcleos y su exposición
+python3 -m alerts subscribe ana@ejemplo.org --name Ana --place "As Meaus"
+python3 -m alerts subscribe pc@ejemplo.org --profile technical --min-level 2
+python3 -m alerts check                       # nivel con el pronóstico real
+python3 -m alerts report                      # informe del estudio, en seco -> alerts/outbox/*.html
+python3 -m alerts run                         # informes pendientes + avisos, en seco
+python3 -m alerts run --send                  # envía de verdad (lo que ejecuta cron)
+python3 -m alerts report --send --force       # reenvía el informe a todos
+python3 -m alerts run --rain-mm 60            # vista previa de cómo se vería un aviso con 60 mm
+python3 -m alerts unsubscribe ana@ejemplo.org
+```
+
+**En la web.** `python3 -m alerts serve` sirve `web/` en
+`http://127.0.0.1:8765/` con una API mínima, y activa el capítulo
+«11 · Alertas por correo» al final del StoryMap: nivel de hoy, formulario
+de suscripción y vista previa del informe que recibiría cada persona
+(cambia con el pueblo elegido). Con un servidor
+estático (`python -m http.server`) el capítulo solo muestra un aviso. Antes
+de publicarlo fuera de localhost: la suscripción no pide confirmación por
+correo (cualquiera puede apuntar cualquier dirección) y no hay límite de
+peticiones.
+
+Sin `--send` no sale ningún correo: se escriben un `.eml` y un `.html` por
+suscriptor en `alerts/outbox/` para revisarlos en el navegador. `--rain-mm`
+solo sirve para esa vista previa; combinado con `--send` se rechaza.
+
+**Envío con Gmail** (el proveedor por defecto). Copia `.env.example` a
+`.env` en la raíz (ya está en `.gitignore`) y rellena dos líneas:
+
+```bash
+ALERTS_SMTP_USER=cuenta-que-envia@gmail.com
+ALERTS_SMTP_PASSWORD=xxxx xxxx xxxx xxxx   # contraseña de aplicación, no la normal
+```
+
+La contraseña de aplicación se crea en
+`https://myaccount.google.com/apppasswords` (la cuenta necesita la
+verificación en dos pasos activada). Gmail limita a unos 500 destinatarios
+al día en cuentas gratuitas. Para otro proveedor, define además
+`ALERTS_SMTP_HOST` / `ALERTS_SMTP_PORT` / `ALERTS_SMTP_SECURITY`; el resto
+de variables opcionales está en `.env.example`.
+
+Prueba a una sola dirección ya suscrita:
+
+```bash
+python3 -m alerts report --only alguien@ejemplo.org --send --force
+```
+
+**Automatizarlo**: una línea de cron, por ejemplo cada 3 horas:
+
+```
+0 */3 * * * cd /ruta/a/GeoSignal && python3 -m alerts run --send >> alerts/cron.log 2>&1
+```
+
+`alerts/state.json` recuerda qué versión del informe y qué episodio de
+lluvia recibió ya cada dirección, así que el cron no repite correos; si el nivel sube para el
+mismo día (amarillo → naranja) sí vuelve a avisar.
+
+**Qué es real y qué no.** Área quemada, microcuencas, ranking, distancias
+a los cauces y candidatas a barrera salen del pipeline. La lluvia es un
+pronóstico de modelo. El volumen de escorrentía usa `C = 0,6`, el mismo
+supuesto que el simulador de la web (120 mm dan los mismos 269.021 m³), y
+los umbrales de nivel están en `alerts/config.py` sin calibrar sobre el
+terreno: ajustadlos con Protección Civil / AEMET antes de usarlo fuera de
+una demo. Cada correo dice que es un sistema experimental y remite a los
+avisos oficiales y al 112.
+
+`alerts/subscribers.json`, `alerts/state.json` y `alerts/outbox/` no se
+commitean (son datos personales y salidas locales); el formato está en
+`alerts/subscribers.example.json`. Pruebas:
+`python3 -m unittest discover -s alerts/tests -t .`
 
 ## Validación mínima antes de construir sobre esto
 
