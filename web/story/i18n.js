@@ -2,7 +2,7 @@
 
 export const I18N = {
   es: {
-    docTitle: "GeoSignal — Análisis SAR en Banda L · Calvos de Randín",
+    docTitle: "GeoSignal - Análisis SAR en Banda L · Calvos de Randín",
     tocAria: "Capítulos del análisis",
     mapAria: "Mapa geoespacial interactivo de Calvos de Randín",
     langBtn: "EN",
@@ -186,7 +186,7 @@ export const I18N = {
   },
 
   en: {
-    docTitle: "GeoSignal — L-Band SAR Severity & Runoff Analysis · Calvos de Randín",
+    docTitle: "GeoSignal - L-Band SAR Severity & Runoff Analysis · Calvos de Randín",
     tocAria: "Analysis chapters",
     mapAria: "Interactive geospatial map of Calvos de Randín",
     skipLink: "Skip to content",
@@ -205,7 +205,7 @@ export const I18N = {
     heroLead:
       "NISAR L-band time series (June–October 2026), decibel-level severity (dB), smoke-free radar vs. optical comparison, and runoff susceptibility across 26 real micro-watersheds.",
     heroGloss:
-      "<dt>ha (hectare)</dt><dd>Unit of area. 1 ha = 100 × 100 m, about one and a half football pitches.</dd><dt>dB (decibel)</dt><dd>Measures how much radar signal comes back to the satellite. The lower (more negative), the less vegetation is left.</dd><dt>NRT (near real time)</dt><dd>Automatic satellite detection within days of the fire — before anyone measures it on the ground.</dd><dt>EFFIS</dt><dd>European (Copernicus) service that detects wildfires by satellite across the EU.</dd>",
+      "<dt>ha (hectare)</dt><dd>Unit of area. 1 ha = 100 × 100 m, about one and a half football pitches.</dd><dt>dB (decibel)</dt><dd>Measures how much radar signal comes back to the satellite. The lower (more negative), the less vegetation is left.</dd><dt>NRT (near real time)</dt><dd>Automatic satellite detection within days of the fire - before anyone measures it on the ground.</dd><dt>EFFIS</dt><dd>European (Copernicus) service that detects wildfires by satellite across the EU.</dd>",
     tocLabels: [
       "Overview",
       "1. Wildfire",
@@ -240,7 +240,7 @@ export const I18N = {
     c1P2:
       "To avoid inflating the numbers, we didn't measure inside a square drawn by eye on the map (that would multiply the burned area by ~4.5). We used the real fire outline detected by <strong>Copernicus EFFIS</strong> (the European wildfire detection service), and the real villages and reservoirs downstream from <strong>OpenStreetMap</strong> (the free, collaborative map).",
     c1Gloss:
-      "<dt>ha (hectare)</dt><dd>Unit of area. 1 ha = 100 × 100 m.</dd><dt>EFFIS</dt><dd>European automatic wildfire-detection service.</dd><dt>OpenStreetMap</dt><dd>A free, volunteer-made map of the world — our source for the real villages and reservoirs.</dd>",
+      "<dt>ha (hectare)</dt><dd>Unit of area. 1 ha = 100 × 100 m.</dd><dt>EFFIS</dt><dd>European automatic wildfire-detection service.</dd><dt>OpenStreetMap</dt><dd>A free, volunteer-made map of the world - our source for the real villages and reservoirs.</dd>",
 
     c2Num: "02 · L-band backscatter principles",
     c2Title: "24 cm microwave penetration and polarimetric response",
@@ -257,7 +257,7 @@ export const I18N = {
     c3Num: "03 · Time series (June–October 2026)",
     c3Title: "Pre-fire seasonal baseline vs. the October 1 backscatter drop",
     c3P1:
-      "NISAR passes over this same area, from the exact same spot in the sky, every <strong>12 days</strong> — so dates can be fairly compared. Comparing just two dates alone could be confused with normal seasonal moisture changes. That's why we use the whole series available since June–July 2026, compared against a <strong>control area that didn't burn</strong>: it looks stable before the fire, and drops sharply right after.",
+      "NISAR passes over this same area, from the exact same spot in the sky, every <strong>12 days</strong> - so dates can be fairly compared. Comparing just two dates alone could be confused with normal seasonal moisture changes. That's why we use the whole series available since June–July 2026, compared against a <strong>control area that didn't burn</strong>: it looks stable before the fire, and drops sharply right after.",
     c3Gloss:
       "<dt>dB (decibel)</dt><dd>Measures how much radar signal comes back to the satellite. The lower, the more vegetation has been lost.</dd><dt>SME2</dt><dd>NISAR's soil-moisture product.</dd><dt>Provisional</dt><dd>NISAR is a very new mission; its data isn't finally calibrated yet and may shift slightly later on.</dd>",
     c3ChartL: "Mean HV (dB) · select acquisition",
@@ -332,7 +332,7 @@ export const I18N = {
     c7Num: "06 · Hydrological susceptibility (26 micro-watersheds)",
     c7Title: "Post-fire sediment susceptibility by micro-watershed & downstream receptors",
     c7P1:
-      "Radar <strong>cannot</strong> tell whether the soil repels water after the fire — that can only be checked chemically, on the ground. But by combining where it burned, the <strong>slope</strong> of the terrain (from a Copernicus elevation model), and how <strong>dry</strong> the soil is (from NISAR's moisture data), we get a reasonable estimate of which areas are more likely to have rain wash away soil and ash: <code>risk = (burned) × (0.6 · slope + 0.4 · dryness)</code>.",
+      "Radar <strong>cannot</strong> tell whether the soil repels water after the fire - that can only be checked chemically, on the ground. But by combining where it burned, the <strong>slope</strong> of the terrain (from a Copernicus elevation model), and how <strong>dry</strong> the soil is (from NISAR's moisture data), we get a reasonable estimate of which areas are more likely to have rain wash away soil and ash: <code>risk = (burned) × (0.6 · slope + 0.4 · dryness)</code>.",
     c7SensLbl: "Ranking sensitivity by minimum burn severity:",
     c7Btn1: "−1.5 dB threshold",
     c7Btn2: "Severity ≥ −3.0 dB",
@@ -369,7 +369,7 @@ export const I18N = {
     c10OtherH: "Space Agency Partner & Other Data",
     c10TeamH: "Team",
     c10P1:
-      "All calculations are done with our own code, on open data: from the NASA/ISRO <strong>NISAR</strong> mission (<code>GCOV</code> and <code>SME2</code> products, still in test phase — \"<em>Provisional</em>\" —, always taken from the satellite's exact same orbit, identified as <strong>Track 15 / Frame 23</strong>, so every date can be fairly compared); from <strong>Copernicus</strong> (the terrain elevation model and EFFIS fire detection); from the <strong>ESA</strong> (the WorldCover 2021 land-cover map); and from <strong>OpenStreetMap</strong>.",
+      "All calculations are done with our own code, on open data: from the NASA/ISRO <strong>NISAR</strong> mission (<code>GCOV</code> and <code>SME2</code> products, still in test phase - \"<em>Provisional</em>\", always taken from the satellite's exact same orbit, identified as <strong>Track 15 / Frame 23</strong>, so every date can be fairly compared); from <strong>Copernicus</strong> (the terrain elevation model and EFFIS fire detection); from the <strong>ESA</strong> (the WorldCover 2021 land-cover map); and from <strong>OpenStreetMap</strong>.",
     c10Gloss:
       "<dt>GCOV / SME2</dt><dd>The two NISAR data products we use: GCOV measures vegetation, SME2 measures soil moisture.</dd><dt>Track / Frame</dt><dd>The exact orbit and segment identifier of the satellite, so anyone can check the same original data.</dd><dt>Provisional</dt><dd>NISAR is a very new mission; this data isn't finally calibrated yet.</dd><dt>QA (quality assurance)</dt><dd>A check that each satellite pass is reliable before using it.</dd>",
     c10Th1: "Pass date",
@@ -378,7 +378,7 @@ export const I18N = {
     c10Th4: "Offset vs. median",
     c10Th5: "QA status",
     c10Warn:
-      "<strong>Explicit limitations:</strong> (1) radar cannot tell whether soil repels water or measure its grain size — that can only be checked on the ground; (2) rain right before a satellite pass can boost the signal and mask mild canopy damage; (3) the land-cover map (WorldCover) is from 2021, not current; (4) the rain simulation assumes 60% surface runoff (not measured on this terrain), and is cut off at the edge of the downloaded elevation tile; (5) the NISAR data used here is still in test phase (\"Provisional\"), not the final version.",
+      "<strong>Explicit limitations:</strong> (1) radar cannot tell whether soil repels water or measure its grain size - that can only be checked on the ground; (2) rain right before a satellite pass can boost the signal and mask mild canopy damage; (3) the land-cover map (WorldCover) is from 2021, not current; (4) the rain simulation assumes 60% surface runoff (not measured on this terrain), and is cut off at the edge of the downloaded elevation tile; (5) the NISAR data used here is still in test phase (\"Provisional\"), not the final version.",
 
     overlayLabels: {
       "hv_pre.png": "NISAR L-Band · HV pre (Sep 19)",
